@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 320" width="280" height="320" font-family="Arial,sans-serif">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#2a2a2a"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </radialGradient>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c4c4c"/>
+      <stop offset="25%" stop-color="#1a1a1a"/>
+      <stop offset="75%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="bodyGradV" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4c4c4c"/>
+      <stop offset="20%" stop-color="#1a1a1a"/>
+      <stop offset="80%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+    <radialGradient id="bodyRadGrad" cx="38%" cy="32%" r="65%">
+      <stop offset="0%" stop-color="#4c4c4c"/>
+      <stop offset="35%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <radialGradient id="knobRingGrad" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#999"/>
+      <stop offset="50%" stop-color="#444"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </radialGradient>
+    <radialGradient id="knobGrad" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#666"/>
+      <stop offset="60%" stop-color="#2a2a2a"/>
+      <stop offset="100%" stop-color="#0d0d0d"/>
+    </radialGradient>
+    <radialGradient id="screwGrad" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#bbb"/>
+      <stop offset="100%" stop-color="#333"/>
+    </radialGradient>
+    <radialGradient id="jackGrad" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#777"/>
+      <stop offset="100%" stop-color="#1a1a1a"/>
+    </radialGradient>
+    <linearGradient id="switchGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#333"/>
+      <stop offset="50%" stop-color="#111"/>
+      <stop offset="100%" stop-color="#080808"/>
+    </linearGradient>
+    <linearGradient id="grillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e6be5e"/>
+      <stop offset="100%" stop-color="#b48c2c"/>
+    </linearGradient>
+    <linearGradient id="speakerGrad" cx="40%" cy="35%" r="60%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#555"/>
+      <stop offset="100%" stop-color="#111"/>
+    </linearGradient>
+    <radialGradient id="speakerRadGrad" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#444"/>
+      <stop offset="70%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </radialGradient>
+    <filter id="ledGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="bodyShadow" x="-15%" y="-10%" width="140%" height="140%">
+      <feDropShadow dx="5" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.7"/>
+    </filter>
+    <filter id="knobShadow" x="-30%" y="-30%" width="170%" height="170%">
+      <feDropShadow dx="1" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.8"/>
+    </filter>
+    <filter id="textEmboss">
+      <feDropShadow dx="0" dy="1" stdDeviation="0.5" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="innerShadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <clipPath id="bodyClip">
+      <rect x="0" y="0" width="320" height="480"/>
+    </clipPath>
+  </defs>
+  <rect width="280" height="320" fill="url(#bgGrad)"/>
+  <rect x="15" y="15" width="250" height="265" rx="8" fill="url(#bodyGrad)" filter="url(#bodyShadow)"/>
+  <circle cx="28" cy="28" r="5" fill="url(#screwGrad)"/>
+  <line x1="24.5" y1="28" x2="31.5" y2="28" stroke="#222" stroke-width="1.2"/>
+  <line x1="28" y1="24.5" x2="28" y2="31.5" stroke="#222" stroke-width="1.2"/>
+  <circle cx="252" cy="28" r="5" fill="url(#screwGrad)"/>
+  <line x1="248.5" y1="28" x2="255.5" y2="28" stroke="#222" stroke-width="1.2"/>
+  <line x1="252" y1="24.5" x2="252" y2="31.5" stroke="#222" stroke-width="1.2"/>
+  <circle cx="28" cy="263" r="5" fill="url(#screwGrad)"/>
+  <line x1="24.5" y1="263" x2="31.5" y2="263" stroke="#222" stroke-width="1.2"/>
+  <line x1="28" y1="259.5" x2="28" y2="266.5" stroke="#222" stroke-width="1.2"/>
+  <circle cx="252" cy="263" r="5" fill="url(#screwGrad)"/>
+  <line x1="248.5" y1="263" x2="255.5" y2="263" stroke="#222" stroke-width="1.2"/>
+  <line x1="252" y1="259.5" x2="252" y2="266.5" stroke="#222" stroke-width="1.2"/>
+  <rect x="25" y="35" width="230" height="220" rx="4" fill="url(#grillGrad)" filter="url(#innerShadow)"/>
+  <line x1="25" y1="35" x2="25" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="31" y1="35" x2="31" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="37" y1="35" x2="37" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="43" y1="35" x2="43" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="49" y1="35" x2="49" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="55" y1="35" x2="55" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="61" y1="35" x2="61" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="67" y1="35" x2="67" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="73" y1="35" x2="73" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="79" y1="35" x2="79" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="85" y1="35" x2="85" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="91" y1="35" x2="91" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="97" y1="35" x2="97" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="103" y1="35" x2="103" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="109" y1="35" x2="109" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="115" y1="35" x2="115" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="121" y1="35" x2="121" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="127" y1="35" x2="127" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="133" y1="35" x2="133" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="139" y1="35" x2="139" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="145" y1="35" x2="145" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="151" y1="35" x2="151" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="157" y1="35" x2="157" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="163" y1="35" x2="163" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="169" y1="35" x2="169" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="175" y1="35" x2="175" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="181" y1="35" x2="181" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="187" y1="35" x2="187" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="193" y1="35" x2="193" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="199" y1="35" x2="199" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="205" y1="35" x2="205" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="211" y1="35" x2="211" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="217" y1="35" x2="217" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="223" y1="35" x2="223" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="229" y1="35" x2="229" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="235" y1="35" x2="235" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="241" y1="35" x2="241" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="247" y1="35" x2="247" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="253" y1="35" x2="253" y2="255" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="35" x2="255" y2="35" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="41" x2="255" y2="41" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="47" x2="255" y2="47" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="53" x2="255" y2="53" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="59" x2="255" y2="59" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="65" x2="255" y2="65" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="71" x2="255" y2="71" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="77" x2="255" y2="77" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="83" x2="255" y2="83" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="89" x2="255" y2="89" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="95" x2="255" y2="95" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="101" x2="255" y2="101" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="107" x2="255" y2="107" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="113" x2="255" y2="113" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="119" x2="255" y2="119" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="125" x2="255" y2="125" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="131" x2="255" y2="131" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="137" x2="255" y2="137" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="143" x2="255" y2="143" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="149" x2="255" y2="149" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="155" x2="255" y2="155" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="161" x2="255" y2="161" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="167" x2="255" y2="167" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="173" x2="255" y2="173" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="179" x2="255" y2="179" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="185" x2="255" y2="185" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="191" x2="255" y2="191" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="197" x2="255" y2="197" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="203" x2="255" y2="203" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="209" x2="255" y2="209" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="215" x2="255" y2="215" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="221" x2="255" y2="221" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="227" x2="255" y2="227" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="233" x2="255" y2="233" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="239" x2="255" y2="239" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="245" x2="255" y2="245" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <line x1="25" y1="251" x2="255" y2="251" stroke="#000" stroke-width="0.4" opacity="0.2"/>
+  <rect x="25" y="35" width="230" height="220" rx="4" fill="none" stroke="#000" stroke-width="1" opacity="0.3"/>
+  <circle cx="140" cy="145" r="90" fill="url(#speakerRadGrad)" filter="url(#innerShadow)"/>
+  <circle cx="140" cy="145" r="90.0" fill="none" stroke="#888" stroke-width="0.8" opacity="0.15"/>
+  <circle cx="140" cy="145" r="73.8" fill="none" stroke="#888" stroke-width="0.8" opacity="0.20"/>
+  <circle cx="140" cy="145" r="57.6" fill="none" stroke="#888" stroke-width="0.8" opacity="0.25"/>
+  <circle cx="140" cy="145" r="41.4" fill="none" stroke="#888" stroke-width="0.8" opacity="0.30"/>
+  <circle cx="140" cy="145" r="25.2" fill="none" stroke="#888" stroke-width="0.8" opacity="0.35"/>
+  <circle cx="140" cy="145" r="12.6" fill="none" stroke="#888" stroke-width="0.8" opacity="0.40"/>
+  <circle cx="140" cy="145" r="10.8" fill="#222"/>
+  <circle cx="132.8" cy="137.8" r="4.5" fill="#555" opacity="0.4"/>
+  <rect x="15" y="260" width="250" height="20" rx="4" fill="#0d0d0d" opacity="0.9"/>
+  <text x="140" y="274" fill="#E8C840" font-size="10" text-anchor="middle" font-weight="bold" font-style="normal" letter-spacing="4" opacity="0.95" filter="url(#textEmboss)" clip-path="url(#bodyClip)">BLACK</text>
+  <text x="140" y="300" fill="white" font-size="13" text-anchor="middle" font-weight="bold" font-style="normal" letter-spacing="1" opacity="0.95" filter="url(#textEmboss)" clip-path="url(#bodyClip)">Black Dlx 1x12 A</text>
+  <text x="140" y="318" fill="#aaa" font-size="9" text-anchor="middle" font-weight="normal" font-style="normal" letter-spacing="1" opacity="0.7" filter="url(#textEmboss)" clip-path="url(#bodyClip)">1x12 Speaker Cabinet</text>
+</svg>
