@@ -135,7 +135,7 @@ export default function PresetPage() {
             <Skeleton className="h-8 w-72" />
             <Skeleton className="h-4 w-48" />
           </div>
-          <Skeleton className="h-28 w-28 rounded-full" />
+          <Skeleton className="h-24 w-24 rounded-full" />
         </div>
         <Skeleton className="h-48" />
         <Skeleton className="h-64" />
@@ -145,16 +145,9 @@ export default function PresetPage() {
 
   if (!preset) {
     return (
-      <div
-        className="text-center py-16"
-        style={{ color: "var(--text-muted)" }}
-      >
+      <div className="text-center py-16 text-[var(--text-muted)]">
         <p className="text-lg">Preset not found.</p>
-        <Link
-          href="/"
-          className="mt-4 inline-block text-sm transition-colors"
-          style={{ color: "var(--accent-gold)" }}
-        >
+        <Link href="/" className="mt-4 inline-block text-sm text-[var(--accent-gold)] transition-colors">
           Back to Library
         </Link>
       </div>
@@ -164,131 +157,46 @@ export default function PresetPage() {
   const chain = preset.generated_chain_json || [];
   const paramSheet = preset.parameter_sheet_json || [];
   const tp = preset.tone_profiles;
-  const warnings =
-    preset.validation_notes?.split("; ").filter(Boolean) || [];
+  const warnings = preset.validation_notes?.split("; ").filter(Boolean) || [];
 
   return (
     <div>
       {/* Breadcrumb */}
-      <div
-        className="text-sm mb-6 animate-fade-up"
-        style={{ color: "var(--text-muted)" }}
-      >
-        <Link
-          href="/"
-          className="transition-colors hover:text-[var(--text-primary)]"
-        >
+      <div className="text-sm mb-6 animate-fade-up text-[var(--text-muted)]">
+        <Link href="/" className="transition-colors hover:text-[var(--text-primary)]">
           Library
         </Link>
         <span className="mx-2">/</span>
-        <Link
-          href={`/tone/${tp.id}`}
-          className="transition-colors hover:text-[var(--text-primary)]"
-        >
+        <Link href={`/tone/${tp.id}`} className="transition-colors hover:text-[var(--text-primary)]">
           {tp.songs.artists.name} — {tp.songs.title}
         </Link>
         <span className="mx-2">/</span>
-        <span style={{ color: "var(--text-secondary)" }}>Preset</span>
+        <span className="text-[var(--text-secondary)]">Preset</span>
       </div>
 
       {/* Hero: Fidelity + Preset Info */}
-      <div
-        className="glass-static p-8 mb-10 animate-fade-up"
-        style={{ animationDelay: "50ms" }}
-      >
-        <div className="flex flex-col md:flex-row items-center gap-8">
-          {/* Fidelity Gauge */}
+      <div className="glass-static p-6 md:p-8 mb-8 animate-fade-up" style={{ animationDelay: "40ms" }}>
+        <div className="flex flex-col md:flex-row items-center gap-6">
           <div className="flex-shrink-0">
             <FidelityBadge score={preset.fidelity_score} size="lg" />
           </div>
-
-          {/* Info */}
           <div className="flex-1 text-center md:text-left min-w-0">
-            <h1
-              className="text-2xl md:text-3xl font-bold tracking-tight mb-2"
-              style={{ color: "var(--text-primary)" }}
-            >
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1.5 text-[var(--text-primary)]">
               {preset.preset_name}
             </h1>
-            <p
-              className="text-sm mb-4"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <p className="text-sm mb-3 text-[var(--text-secondary)]">
               {tp.songs.artists.name} —{" "}
-              <span style={{ color: "var(--text-primary)" }}>
-                {tp.songs.title}
-              </span>
-              <span
-                className="ml-2 font-medium"
-                style={{ color: "var(--accent-gold)" }}
-              >
-                {tp.name}
-              </span>
+              <span className="text-[var(--text-primary)]">{tp.songs.title}</span>
+              <span className="ml-2 font-medium text-[var(--accent-gold)]">{tp.name}</span>
             </p>
-
-            {/* Metadata chips */}
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-              <span className="chip">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="mr-1.5"
-                >
-                  <rect
-                    x="4"
-                    y="2"
-                    width="16"
-                    height="20"
-                    rx="2"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                  <circle
-                    cx="12"
-                    cy="16"
-                    r="2"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                  <line
-                    x1="8"
-                    y1="7"
-                    x2="16"
-                    y2="7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                </svg>
-                {preset.devices.device_name}
-              </span>
-              <span className="chip">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="mr-1.5"
-                >
-                  <path
-                    d="M12 3v18M3 12h18"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                {preset.output_contexts.name}
-              </span>
+            <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
+              <span className="chip">{preset.devices.device_name}</span>
+              <span className="chip">{preset.output_contexts.name}</span>
               <span
                 className="chip capitalize"
                 style={
                   preset.generation_status === "complete"
-                    ? {
-                        background: "rgba(34,197,94,0.08)",
-                        borderColor: "rgba(34,197,94,0.2)",
-                        color: "#22c55e",
-                      }
+                    ? { background: "rgba(34,197,94,0.08)", borderColor: "rgba(34,197,94,0.15)", color: "#22c55e" }
                     : {}
                 }
               >
@@ -301,7 +209,7 @@ export default function PresetPage() {
 
       {/* Score Breakdown */}
       {preset.fidelity_breakdown && (
-        <div className="mb-10 animate-fade-up" style={{ animationDelay: "75ms" }}>
+        <div className="mb-8 animate-fade-up" style={{ animationDelay: "60ms" }}>
           <SectionHeading>Fidelity Analysis</SectionHeading>
           <div className="glass-static">
             <ScoreBreakdownCard breakdown={preset.fidelity_breakdown} />
@@ -310,116 +218,58 @@ export default function PresetPage() {
       )}
 
       {/* Signal Chain */}
-      <div className="mb-10 animate-fade-up" style={{ animationDelay: "100ms" }}>
+      <div className="mb-8 animate-fade-up" style={{ animationDelay: "80ms" }}>
         <SectionHeading>Signal Chain</SectionHeading>
         <SignalChainDiagram chain={chain} />
       </div>
 
       {/* Parameter Sheet */}
-      <div className="mb-10 animate-fade-up" style={{ animationDelay: "150ms" }}>
+      <div className="mb-8 animate-fade-up" style={{ animationDelay: "100ms" }}>
         <SectionHeading>Parameter Sheet</SectionHeading>
         <div className="glass-static overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr
-                  style={{
-                    borderBottom: "1px solid var(--glass-border)",
-                    background: "rgba(255,255,255,0.02)",
-                  }}
-                >
-                  <th
-                    className="text-left px-5 py-3 text-[10px] uppercase tracking-[0.1em] font-semibold"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Slot
-                  </th>
-                  <th
-                    className="text-left px-5 py-3 text-[10px] uppercase tracking-[0.1em] font-semibold"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Role
-                  </th>
-                  <th
-                    className="text-left px-5 py-3 text-[10px] uppercase tracking-[0.1em] font-semibold"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Ampero Model
-                  </th>
-                  <th
-                    className="text-left px-5 py-3 text-[10px] uppercase tracking-[0.1em] font-semibold"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Based On
-                  </th>
-                  <th
-                    className="text-left px-5 py-3 text-[10px] uppercase tracking-[0.1em] font-semibold"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Confidence
-                  </th>
+                <tr className="border-b border-[var(--border)] bg-[rgba(255,255,255,0.02)]">
+                  <th className="text-left px-4 py-2.5 label">Slot</th>
+                  <th className="text-left px-4 py-2.5 label">Role</th>
+                  <th className="text-left px-4 py-2.5 label">Ampero Model</th>
+                  <th className="text-left px-4 py-2.5 label">Based On</th>
+                  <th className="text-left px-4 py-2.5 label">Confidence</th>
                 </tr>
               </thead>
               <tbody>
                 {paramSheet.map((row, i) => (
                   <tr
                     key={i}
-                    style={{
-                      borderBottom:
-                        i < paramSheet.length - 1
-                          ? "1px solid var(--glass-border)"
-                          : "none",
-                      background:
-                        i % 2 === 1
-                          ? "rgba(255,255,255,0.015)"
-                          : "transparent",
-                    }}
+                    className={`border-b border-[var(--border)] last:border-0 ${i % 2 === 1 ? "bg-[rgba(255,255,255,0.015)]" : ""}`}
                   >
-                    <td
-                      className="px-5 py-3 font-mono text-xs"
-                      style={{ color: "var(--text-muted)" }}
-                    >
+                    <td className="px-4 py-2.5 font-mono text-xs text-[var(--text-muted)]">
                       {row.slot}
                     </td>
-                    <td
-                      className="px-5 py-3 capitalize text-xs font-medium"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
+                    <td className="px-4 py-2.5 capitalize text-xs font-medium text-[var(--text-secondary)]">
                       {row.block_role}
                     </td>
-                    <td
-                      className="px-5 py-3 font-medium"
-                      style={{ color: "var(--text-primary)" }}
-                    >
+                    <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">
                       {row.model}
                     </td>
-                    <td
-                      className="px-5 py-3 text-xs"
-                      style={{ color: "var(--text-muted)" }}
-                    >
+                    <td className="px-4 py-2.5 text-xs text-[var(--text-muted)]">
                       {row.canonical_reference}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <div
-                          className="h-1.5 rounded-full flex-1 max-w-[80px]"
-                          style={{ background: "var(--bg-elevated)" }}
-                        >
+                        <div className="h-1.5 rounded-full flex-1 max-w-[80px] bg-[var(--bg-elevated)]">
                           <div
                             className="h-full rounded-full transition-all"
                             style={{
                               width: `${Math.round(row.mapping_confidence * 100)}%`,
-                              background: confidenceColor(
-                                row.mapping_confidence
-                              ),
+                              background: confidenceColor(row.mapping_confidence),
                             }}
                           />
                         </div>
                         <span
                           className="text-xs font-medium font-mono"
-                          style={{
-                            color: confidenceColor(row.mapping_confidence),
-                          }}
+                          style={{ color: confidenceColor(row.mapping_confidence) }}
                         >
                           {Math.round(row.mapping_confidence * 100)}%
                         </span>
@@ -431,48 +281,26 @@ export default function PresetPage() {
             </table>
           </div>
 
-          {/* Expanded params for each row */}
-          {paramSheet.some(
-            (r) => r.params && Object.keys(r.params).length > 0
-          ) && (
-            <div
-              style={{ borderTop: "1px solid var(--glass-border)" }}
-              className="px-5 py-4"
-            >
+          {/* Expanded params */}
+          {paramSheet.some((r) => r.params && Object.keys(r.params).length > 0) && (
+            <div className="px-4 py-3 border-t border-[var(--border)]">
               <CollapsibleSection title="Detailed Parameters">
                 <div className="space-y-4 pt-3">
                   {paramSheet
-                    .filter(
-                      (r) => r.params && Object.keys(r.params).length > 0
-                    )
+                    .filter((r) => r.params && Object.keys(r.params).length > 0)
                     .map((row, i) => (
                       <div key={i}>
-                        <div
-                          className="text-xs font-semibold mb-2 capitalize"
-                          style={{ color: "var(--accent-gold)" }}
-                        >
+                        <div className="text-xs font-semibold mb-2 capitalize text-[var(--accent-gold)]">
                           Slot {row.slot} — {row.block_role}: {row.model}
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
                           {Object.entries(row.params).map(([key, val]) => (
                             <div
                               key={key}
-                              className="px-3 py-2 rounded"
-                              style={{
-                                background: "var(--bg-deep)",
-                                border: "1px solid var(--glass-border)",
-                              }}
+                              className="px-3 py-2 rounded-lg bg-[var(--bg-deep)] border border-[var(--border)]"
                             >
-                              <div
-                                className="text-[10px] uppercase tracking-wider font-medium mb-0.5"
-                                style={{ color: "var(--text-muted)" }}
-                              >
-                                {key}
-                              </div>
-                              <div
-                                className="text-sm font-mono font-medium"
-                                style={{ color: "var(--text-primary)" }}
-                              >
+                              <div className="label mb-0.5">{key}</div>
+                              <div className="text-sm font-mono font-medium text-[var(--text-primary)]">
                                 {String(val)}
                               </div>
                             </div>
@@ -489,37 +317,19 @@ export default function PresetPage() {
 
       {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="mb-10 animate-fade-up" style={{ animationDelay: "200ms" }}>
+        <div className="mb-8 animate-fade-up" style={{ animationDelay: "120ms" }}>
           <SectionHeading>Warnings</SectionHeading>
-          <div
-            className="glass-static p-5"
-            style={{ borderColor: "rgba(245,158,11,0.2)" }}
-          >
+          <div className="glass-static p-4 border-[rgba(245,158,11,0.15)]">
             <div className="space-y-2">
               {warnings.map((w, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    className="flex-shrink-0 mt-0.5"
-                    style={{ color: "#f59e0b" }}
-                  >
+                <div key={i} className="flex items-start gap-2.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5 text-[#f59e0b]">
                     <path
                       d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                     />
                   </svg>
-                  <span
-                    className="text-sm"
-                    style={{ color: "#fbbf24" }}
-                  >
-                    {w}
-                  </span>
+                  <span className="text-sm text-[#fbbf24]">{w}</span>
                 </div>
               ))}
             </div>
@@ -529,32 +339,18 @@ export default function PresetPage() {
 
       {/* Generation Log */}
       {logs.length > 0 && (
-        <div className="mb-10 animate-fade-up" style={{ animationDelay: "250ms" }}>
+        <div className="mb-8 animate-fade-up" style={{ animationDelay: "140ms" }}>
           <CollapsibleSection title="Generation Log">
-            <div
-              className="mt-3 rounded-lg p-4 font-mono text-xs space-y-1.5 overflow-x-auto"
-              style={{
-                background: "var(--bg-deep)",
-                border: "1px solid var(--glass-border)",
-              }}
-            >
+            <div className="mt-3 rounded-lg p-4 font-mono text-xs space-y-1.5 overflow-x-auto bg-[var(--bg-deep)] border border-[var(--border)]">
               {logs.map((log, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <span
-                    className="flex-shrink-0 w-4 text-center"
-                    style={{ color: STATUS_COLORS[log.status] || "var(--text-muted)" }}
-                  >
+                  <span className="flex-shrink-0 w-4 text-center" style={{ color: STATUS_COLORS[log.status] || "var(--text-muted)" }}>
                     {STATUS_ICONS[log.status] || "·"}
                   </span>
-                  <span
-                    className="flex-shrink-0"
-                    style={{ color: "var(--text-muted)", minWidth: "140px" }}
-                  >
+                  <span className="flex-shrink-0 min-w-[140px] text-[var(--text-muted)]">
                     {log.step_name}
                   </span>
-                  <span style={{ color: "var(--text-secondary)" }}>
-                    {log.message}
-                  </span>
+                  <span className="text-[var(--text-secondary)]">{log.message}</span>
                 </div>
               ))}
             </div>
@@ -563,34 +359,21 @@ export default function PresetPage() {
       )}
 
       {/* Actions */}
-      <div
-        className="flex flex-wrap gap-4 justify-center mt-12 animate-fade-up"
-        style={{ animationDelay: "300ms" }}
-      >
-        <GoldButton
-          className="px-8 py-3"
-          onClick={handleDownloadPrst}
-          loading={downloadLoading}
-        >
+      <div className="flex flex-wrap gap-3 justify-center mt-10 animate-fade-up" style={{ animationDelay: "160ms" }}>
+        <GoldButton onClick={handleDownloadPrst} loading={downloadLoading}>
           Download .prst
         </GoldButton>
         <Link href={`/generate/${tp.id}`}>
-          <GoldButton className="px-8 py-3">
+          <GoldButton variant="ghost">
             Generate with Different Settings
           </GoldButton>
         </Link>
-        <Link
-          href="/"
-          className="glass px-8 py-3 text-sm font-medium transition-all"
-          style={{ color: "var(--text-primary)" }}
-        >
+        <Link href="/" className="btn-ghost">
           Back to Library
         </Link>
       </div>
       {downloadError && (
-        <p className="text-center mt-2 text-sm" style={{ color: "#ef4444" }}>
-          {downloadError}
-        </p>
+        <p className="text-center mt-2 text-sm text-[#ef4444]">{downloadError}</p>
       )}
     </div>
   );

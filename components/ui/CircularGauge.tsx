@@ -24,8 +24,8 @@ function getLabel(score: number): string {
 
 export function CircularGauge({
   score,
-  size = 120,
-  strokeWidth = 8,
+  size = 110,
+  strokeWidth = 6,
   label,
 }: CircularGaugeProps) {
   const radius = (size - strokeWidth) / 2;
@@ -73,8 +73,7 @@ export function CircularGauge({
           {Math.round(score)}
         </span>
         <span
-          className="text-[10px] uppercase tracking-wider font-medium"
-          style={{ color: "var(--text-muted)" }}
+          className="text-[10px] uppercase tracking-wider font-medium text-[var(--text-muted)]"
         >
           {qualityLabel}
         </span>

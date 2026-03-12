@@ -37,7 +37,6 @@ export default function ToneLibrary() {
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
-    // Use the searchable view for cross-table search (artist, song title, profile name)
     let query = supabase
       .from("tone_profiles_search")
       .select(
@@ -62,7 +61,6 @@ export default function ToneLibrary() {
 
     const { data, count, error } = await query;
     if (!error && data) {
-      // Reshape flat view data to match ToneProfile interface
       const profiles = (data as Record<string, unknown>[]).map((d) => ({
         id: d.id as string,
         name: d.name as string,
@@ -99,31 +97,24 @@ export default function ToneLibrary() {
 
   return (
     <div>
-      {/* Hero section */}
-      <div className="text-center mb-12 pt-4 animate-fade-up">
+      {/* Hero */}
+      <div className="text-center mb-10 pt-4 animate-fade-up">
         <Image
           src="/logo.jpg"
           alt="Tone Recipes — Iconic Guitar Tones"
-          width={480}
-          height={270}
-          className="mx-auto mb-6 rounded-xl"
+          width={420}
+          height={236}
+          className="mx-auto mb-5 rounded-xl"
           style={{ objectFit: "contain" }}
           priority
         />
-        <p
-          className="text-lg max-w-2xl mx-auto leading-relaxed"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <p className="text-base max-w-xl mx-auto text-[var(--text-secondary)] leading-relaxed">
           {total > 0 ? (
             <>
-              <span
-                className="font-semibold"
-                style={{ color: "var(--accent-gold)" }}
-              >
+              <span className="font-semibold text-[var(--accent-gold)]">
                 {total}
               </span>{" "}
-              iconic guitar tones, analyzed and ready to generate
-              Ampero II Stomp presets.
+              iconic guitar tones, analyzed and ready to generate Ampero II Stomp presets.
             </>
           ) : (
             "Browse iconic guitar tones and generate custom presets."
@@ -131,69 +122,37 @@ export default function ToneLibrary() {
         </p>
       </div>
 
-      {/* Search bar */}
-      <div className="max-w-2xl mx-auto mb-8 animate-fade-up" style={{ animationDelay: "50ms" }}>
-        <div
-          className="relative"
-          style={{
-            background: "var(--glass-bg)",
-            border: "1px solid var(--glass-border)",
-            borderRadius: "var(--radius-lg)",
-          }}
-        >
+      {/* Search */}
+      <div className="max-w-xl mx-auto mb-8 animate-fade-up" style={{ animationDelay: "40ms" }}>
+        <div className="relative glass-static">
           <svg
-            width="18"
-            height="18"
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
             fill="none"
-            className="absolute left-4 top-1/2 -translate-y-1/2"
-            style={{ color: "var(--text-muted)" }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
           >
-            <circle
-              cx="11"
-              cy="11"
-              r="8"
-              stroke="currentColor"
-              strokeWidth="2"
-            />
-            <path
-              d="M21 21l-4.35-4.35"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
+            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
           <input
             type="text"
             placeholder="Search by artist, song, or tone name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-transparent pl-12 pr-4 py-3.5 text-sm focus:outline-none"
-            style={{
-              color: "var(--text-primary)",
-              borderRadius: "var(--radius-lg)",
-            }}
+            className="w-full bg-transparent pl-11 pr-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none rounded-xl"
           />
         </div>
       </div>
 
-      {/* Filter chips */}
-      <div className="mb-4 animate-fade-up" style={{ animationDelay: "100ms" }}>
-        <div
-          className="text-[10px] uppercase tracking-[0.12em] font-semibold mb-2"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Section
-        </div>
-        <div className="flex flex-wrap gap-2">
+      {/* Filters */}
+      <div className="mb-3 animate-fade-up" style={{ animationDelay: "80ms" }}>
+        <div className="label mb-2">Section</div>
+        <div className="flex flex-wrap gap-1.5">
           {SECTION_TYPES.map((s) => (
             <FilterChip
               key={s}
-              label={
-                s === "all"
-                  ? "All"
-                  : s.charAt(0).toUpperCase() + s.slice(1)
-              }
+              label={s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
               active={sectionFilter === s}
               onClick={() => setSectionFilter(s)}
             />
@@ -201,14 +160,9 @@ export default function ToneLibrary() {
         </div>
       </div>
 
-      <div className="mb-8 animate-fade-up" style={{ animationDelay: "150ms" }}>
-        <div
-          className="text-[10px] uppercase tracking-[0.12em] font-semibold mb-2"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Gain
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <div className="mb-8 animate-fade-up" style={{ animationDelay: "120ms" }}>
+        <div className="label mb-2">Gain</div>
+        <div className="flex flex-wrap gap-1.5">
           {GAIN_LEVELS.map((g) => (
             <FilterChip
               key={g.value}
@@ -222,42 +176,28 @@ export default function ToneLibrary() {
 
       {/* Results */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {Array.from({ length: 9 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </div>
       ) : profiles.length === 0 ? (
-        <div
-          className="text-center py-16"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <div className="text-center py-16 text-[var(--text-muted)]">
           <svg
-            width="48"
-            height="48"
+            width="40"
+            height="40"
             viewBox="0 0 24 24"
             fill="none"
-            className="mx-auto mb-4 opacity-40"
+            className="mx-auto mb-3 opacity-40"
           >
-            <circle
-              cx="11"
-              cy="11"
-              r="8"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M21 21l-4.35-4.35"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
+            <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
           <p className="text-sm">No tones found. Try adjusting your filters.</p>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 stagger">
             {profiles.map((p) => (
               <div key={p.id} className="animate-fade-up">
                 <ToneCard profile={p} />
@@ -267,28 +207,21 @@ export default function ToneLibrary() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-10">
+            <div className="flex justify-center items-center gap-3 mt-10">
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="glass px-5 py-2.5 text-sm font-medium disabled:opacity-30 transition-all"
-                style={{ color: "var(--text-primary)" }}
+                className="btn-ghost disabled:opacity-30"
               >
                 Previous
               </button>
-              <span
-                className="text-sm font-medium"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <span className="text-sm font-medium text-[var(--text-muted)] tabular-nums">
                 {page + 1} / {totalPages}
               </span>
               <button
-                onClick={() =>
-                  setPage((p) => Math.min(totalPages - 1, p + 1))
-                }
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="glass px-5 py-2.5 text-sm font-medium disabled:opacity-30 transition-all"
-                style={{ color: "var(--text-primary)" }}
+                className="btn-ghost disabled:opacity-30"
               >
                 Next
               </button>

@@ -1,0 +1,11 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/generate/[toneId]/page": "app/generate/[toneId]/page.js",
+  "/page": "app/page.js",
+  "/preset/[id]/page": "app/preset/[id]/page.js",
+  "/request/page": "app/request/page.js",
+  "/request/status/page": "app/request/status/page.js",
+  "/tone/[id]/page": "app/tone/[id]/page.js"
+}
