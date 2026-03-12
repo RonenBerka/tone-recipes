@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Lock, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import {
   ToneProfile,
@@ -11,7 +12,9 @@ import {
   OutputContext,
 } from "@/lib/types";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { GoldButton } from "@/components/ui/GoldButton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Toggle } from "@/components/ui/toggle";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TonalBiasPreview } from "@/components/TonalBiasPreview";
 import { DeviceSelector, Device } from "@/components/DeviceSelector";
@@ -49,34 +52,21 @@ function SelectionCard({
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left p-4 rounded-lg transition-all duration-150"
-      style={{
-        background: selected
-          ? "rgba(212,168,50,0.08)"
-          : "var(--glass-bg)",
-        border: selected
-          ? "1px solid rgba(212,168,50,0.3)"
-          : "1px solid var(--glass-border)",
-        boxShadow: selected
-          ? "0 0 12px rgba(212,168,50,0.08)"
-          : "none",
-      }}
+      className={`w-full text-left transition-all duration-150 group/card flex flex-col overflow-hidden rounded-xl bg-card py-3 px-4 text-sm text-card-foreground ring-1 ${
+        selected
+          ? "ring-primary/30 bg-primary/5 shadow-[0_0_12px_rgba(212,168,50,0.08)]"
+          : "ring-foreground/10"
+      }`}
     >
       <div className="flex items-center gap-3">
         {/* Radio indicator */}
         <div
-          className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center"
-          style={{
-            border: selected
-              ? "2px solid var(--accent-gold)"
-              : "2px solid var(--text-muted)",
-          }}
+          className={`w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center border-2 ${
+            selected ? "border-primary" : "border-muted-foreground"
+          }`}
         >
           {selected && (
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{ background: "var(--accent-gold)" }}
-            />
+            <div className="w-2 h-2 rounded-full bg-primary" />
           )}
         </div>
         <div className="min-w-0 flex-1">{children}</div>
@@ -199,38 +189,32 @@ export default function GearSelectionPage() {
   return (
     <div>
       {/* Breadcrumb */}
-      <div
-        className="text-sm mb-6 animate-fade-up"
-        style={{ color: "var(--text-muted)" }}
-      >
+      <div className="text-sm mb-6 animate-fade-up text-muted-foreground">
         <Link
           href="/"
-          className="transition-colors hover:text-[var(--text-primary)]"
+          className="transition-colors hover:text-foreground"
         >
           Library
         </Link>
         <span className="mx-2">/</span>
         <Link
           href={`/tone/${toneId}`}
-          className="transition-colors hover:text-[var(--text-primary)]"
+          className="transition-colors hover:text-foreground"
         >
           {profile.songs.artists.name} — {profile.songs.title}
         </Link>
         <span className="mx-2">/</span>
-        <span style={{ color: "var(--text-secondary)" }}>Generate</span>
+        <span className="text-muted-foreground">Generate</span>
       </div>
 
       {/* Header */}
       <div className="mb-10 animate-fade-up" style={{ animationDelay: "50ms" }}>
-        <h1 className="text-3xl font-bold tracking-tight mb-1">
+        <h1 className="text-3xl font-bold tracking-tight mb-1 text-foreground">
           Generate Preset
         </h1>
-        <p style={{ color: "var(--text-secondary)" }}>
+        <p className="text-muted-foreground">
           {profile.songs.artists.name} — {profile.songs.title}
-          <span
-            className="ml-2 font-medium"
-            style={{ color: "var(--accent-gold)" }}
-          >
+          <span className="ml-2 font-medium text-primary">
             {profile.name}
           </span>
         </p>
@@ -249,24 +233,15 @@ export default function GearSelectionPage() {
           }}
         />
         {selectedDevice && !selectedDevice.is_active && (
-          <div
-            className="mt-3 p-3 rounded-lg text-sm flex items-center gap-2"
-            style={{
-              background: "rgba(245, 158, 11, 0.06)",
-              border: "1px solid rgba(245, 158, 11, 0.15)",
-              color: "#f59e0b",
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
-              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.2" />
-              <path d="M8 5v3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-              <circle cx="8" cy="11.2" r="0.8" fill="currentColor" />
-            </svg>
-            <span>
-              {selectedDevice.brand} {selectedDevice.model} support is coming soon.
-              Preset generation is currently available for Hotone Ampero devices.
-            </span>
-          </div>
+          <Card className="mt-3 border-amber-500/15 bg-amber-500/5">
+            <CardContent className="flex items-center gap-2 text-sm text-amber-500">
+              <AlertCircle className="size-4 flex-shrink-0" />
+              <span>
+                {selectedDevice.brand} {selectedDevice.model} support is coming soon.
+                Preset generation is currently available for Hotone Ampero devices.
+              </span>
+            </CardContent>
+          </Card>
         )}
       </div>
 
@@ -281,17 +256,11 @@ export default function GearSelectionPage() {
                 selected={selectedGuitar === g.id}
                 onClick={() => setSelectedGuitar(g.id)}
               >
-                <div
-                  className="font-medium text-sm"
-                  style={{ color: "var(--text-primary)" }}
-                >
+                <div className="font-medium text-sm text-foreground">
                   {g.name}
                 </div>
                 {(g.body_type || g.default_pickup_family) && (
-                  <div
-                    className="text-xs mt-0.5"
-                    style={{ color: "var(--text-muted)" }}
-                  >
+                  <div className="text-xs mt-0.5 text-muted-foreground">
                     {[g.body_type, g.default_pickup_family].filter(Boolean).join(" — ")}
                   </div>
                 )}
@@ -316,10 +285,7 @@ export default function GearSelectionPage() {
                 selected={selectedPickup === p.id}
                 onClick={() => setSelectedPickup(p.id)}
               >
-                <span
-                  className="font-medium text-sm"
-                  style={{ color: "var(--text-primary)" }}
-                >
+                <span className="font-medium text-sm text-foreground">
                   {p.name}
                 </span>
               </SelectionCard>
@@ -330,22 +296,16 @@ export default function GearSelectionPage() {
             <SectionHeading>Pickup Position</SectionHeading>
             <div className="flex gap-2">
               {PICKUP_POSITIONS.map((pos) => (
-                <button
+                <Toggle
                   key={pos}
-                  onClick={() => setSelectedPosition(pos)}
-                  className="chip capitalize flex-1 text-center justify-center"
-                  style={
-                    selectedPosition === pos
-                      ? {
-                          background: "rgba(212,168,50,0.12)",
-                          borderColor: "rgba(212,168,50,0.3)",
-                          color: "var(--accent-gold)",
-                        }
-                      : {}
-                  }
+                  variant="outline"
+                  pressed={selectedPosition === pos}
+                  onPressedChange={() => setSelectedPosition(pos)}
+                  className="flex-1 capitalize justify-center"
+                  aria-label={`${pos} pickup position`}
                 >
                   {pos}
-                </button>
+                </Toggle>
               ))}
             </div>
           </div>
@@ -361,16 +321,10 @@ export default function GearSelectionPage() {
                 selected={selectedOutput === o.id}
                 onClick={() => setSelectedOutput(o.id)}
               >
-                <div
-                  className="font-medium text-sm"
-                  style={{ color: "var(--text-primary)" }}
-                >
+                <div className="font-medium text-sm text-foreground">
                   {o.name}
                 </div>
-                <div
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
+                <div className="text-xs mt-0.5 text-muted-foreground">
                   Cab {o.cab_should_be_enabled ? "enabled" : "bypassed"}
                 </div>
               </SelectionCard>
@@ -388,16 +342,10 @@ export default function GearSelectionPage() {
                 selected={selectedMode === m.value}
                 onClick={() => setSelectedMode(m.value)}
               >
-                <div
-                  className="font-medium text-sm"
-                  style={{ color: "var(--text-primary)" }}
-                >
+                <div className="font-medium text-sm text-foreground">
                   {m.label}
                 </div>
-                <div
-                  className="text-xs mt-0.5"
-                  style={{ color: "var(--text-muted)" }}
-                >
+                <div className="text-xs mt-0.5 text-muted-foreground">
                   {m.desc}
                 </div>
               </SelectionCard>
@@ -409,47 +357,33 @@ export default function GearSelectionPage() {
       {/* Generate Button */}
       <div className="mt-12 text-center animate-fade-up" style={{ animationDelay: "300ms" }}>
         {error && (
-          <div
-            className="glass-static p-4 mb-6 text-sm max-w-md mx-auto"
-            style={{
-              borderColor: "rgba(239,68,68,0.3)",
-              color: "#f87171",
-            }}
-          >
-            {error}
-          </div>
+          <Card className="mb-6 max-w-md mx-auto border-destructive/30">
+            <CardContent className="text-sm text-destructive">
+              {error}
+            </CardContent>
+          </Card>
         )}
         {selectedDevice && !selectedDevice.is_active ? (
           <div className="space-y-3">
-            <div
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium"
-              style={{
-                background: "rgba(12, 18, 28, 0.6)",
-                border: "1px solid var(--glass-border)",
-                color: "var(--text-muted)",
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="3" y="7" width="10" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium bg-muted/60 ring-1 ring-foreground/10 text-muted-foreground">
+              <Lock className="size-4" />
               Coming Soon — {selectedDevice.brand} {selectedDevice.model}
             </div>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            <p className="text-xs text-muted-foreground">
               Switch to a supported Hotone Ampero device to generate presets now
             </p>
           </div>
         ) : (
-          <GoldButton
+          <Button
             onClick={handleGenerate}
             disabled={
-              !selectedGuitar || !selectedPickup || !selectedOutput
+              !selectedGuitar || !selectedPickup || !selectedOutput || generating
             }
-            loading={generating}
-            className="text-lg px-16 py-4"
+            size="lg"
+            className="text-lg px-16 py-4 h-auto"
           >
-            Generate{selectedDevice ? ` ${selectedDevice.preset_extension || ""}` : ""} Preset
-          </GoldButton>
+            {generating ? "Generating..." : `Generate${selectedDevice ? ` ${selectedDevice.preset_extension || ""}` : ""} Preset`}
+          </Button>
         )}
       </div>
     </div>

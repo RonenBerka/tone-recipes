@@ -3,13 +3,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { Download, RefreshCw, ArrowLeft, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SignalChainDiagram } from "@/components/SignalChainDiagram";
 import { FidelityBadge } from "@/components/FidelityBadge";
 import { ScoreBreakdownCard } from "@/components/ScoreBreakdownCard";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { GoldButton } from "@/components/ui/GoldButton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ChainBlock } from "@/lib/types";
 import { downloadPrst } from "@/lib/exportPreset";
@@ -51,23 +54,30 @@ interface PresetData {
 }
 
 const STATUS_ICONS: Record<string, string> = {
-  complete: "✓",
-  running: "◎",
-  error: "✗",
-  skipped: "–",
+  complete: "\u2713",
+  running: "\u25CE",
+  error: "\u2717",
+  skipped: "\u2013",
 };
 const STATUS_COLORS: Record<string, string> = {
-  complete: "#22c55e",
-  running: "var(--accent-gold)",
-  error: "#ef4444",
-  skipped: "var(--text-muted)",
+  complete: "text-green-500",
+  running: "text-primary",
+  error: "text-red-500",
+  skipped: "text-muted-foreground",
 };
 
 function confidenceColor(v: number): string {
-  if (v >= 0.9) return "#22c55e";
-  if (v >= 0.75) return "var(--accent-gold)";
-  if (v >= 0.5) return "#f59e0b";
-  return "#ef4444";
+  if (v >= 0.9) return "text-green-500";
+  if (v >= 0.75) return "text-primary";
+  if (v >= 0.5) return "text-amber-500";
+  return "text-red-500";
+}
+
+function confidenceBgColor(v: number): string {
+  if (v >= 0.9) return "bg-green-500";
+  if (v >= 0.75) return "bg-primary";
+  if (v >= 0.5) return "bg-amber-500";
+  return "bg-red-500";
 }
 
 export default function PresetPage() {
@@ -145,9 +155,9 @@ export default function PresetPage() {
 
   if (!preset) {
     return (
-      <div className="text-center py-16 text-[var(--text-muted)]">
+      <div className="text-center py-16 text-muted-foreground">
         <p className="text-lg">Preset not found.</p>
-        <Link href="/" className="mt-4 inline-block text-sm text-[var(--accent-gold)] transition-colors">
+        <Link href="/" className="mt-4 inline-block text-sm text-primary transition-colors hover:text-primary/80">
           Back to Library
         </Link>
       </div>
@@ -162,195 +172,196 @@ export default function PresetPage() {
   return (
     <div>
       {/* Breadcrumb */}
-      <div className="text-sm mb-6 animate-fade-up text-[var(--text-muted)]">
-        <Link href="/" className="transition-colors hover:text-[var(--text-primary)]">
+      <div className="text-sm mb-6 animate-fade-up text-muted-foreground">
+        <Link href="/" className="transition-colors hover:text-foreground">
           Library
         </Link>
         <span className="mx-2">/</span>
-        <Link href={`/tone/${tp.id}`} className="transition-colors hover:text-[var(--text-primary)]">
+        <Link href={`/tone/${tp.id}`} className="transition-colors hover:text-foreground">
           {tp.songs.artists.name} — {tp.songs.title}
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-[var(--text-secondary)]">Preset</span>
+        <span className="text-secondary-foreground">Preset</span>
       </div>
 
       {/* Hero: Fidelity + Preset Info */}
-      <div className="glass-static p-6 md:p-8 mb-8 animate-fade-up" style={{ animationDelay: "40ms" }}>
-        <div className="flex flex-col md:flex-row items-center gap-6">
-          <div className="flex-shrink-0">
-            <FidelityBadge score={preset.fidelity_score} size="lg" />
-          </div>
-          <div className="flex-1 text-center md:text-left min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1.5 text-[var(--text-primary)]">
-              {preset.preset_name}
-            </h1>
-            <p className="text-sm mb-3 text-[var(--text-secondary)]">
-              {tp.songs.artists.name} —{" "}
-              <span className="text-[var(--text-primary)]">{tp.songs.title}</span>
-              <span className="ml-2 font-medium text-[var(--accent-gold)]">{tp.name}</span>
-            </p>
-            <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
-              <span className="chip">{preset.devices.device_name}</span>
-              <span className="chip">{preset.output_contexts.name}</span>
-              <span
-                className="chip capitalize"
-                style={
-                  preset.generation_status === "complete"
-                    ? { background: "rgba(34,197,94,0.08)", borderColor: "rgba(34,197,94,0.15)", color: "#22c55e" }
-                    : {}
-                }
-              >
-                {preset.generation_status}
-              </span>
+      <Card className="mb-8 animate-fade-up [animation-delay:40ms]">
+        <CardContent className="p-6 md:p-8">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-shrink-0">
+              <FidelityBadge score={preset.fidelity_score} size="lg" />
+            </div>
+            <div className="flex-1 text-center md:text-left min-w-0">
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1.5 text-foreground">
+                {preset.preset_name}
+              </h1>
+              <p className="text-sm mb-3 text-secondary-foreground">
+                {tp.songs.artists.name} —{" "}
+                <span className="text-foreground">{tp.songs.title}</span>
+                <span className="ml-2 font-medium text-primary">{tp.name}</span>
+              </p>
+              <div className="flex flex-wrap gap-1.5 justify-center md:justify-start">
+                <Badge variant="secondary">{preset.devices.device_name}</Badge>
+                <Badge variant="secondary">{preset.output_contexts.name}</Badge>
+                <Badge
+                  variant="secondary"
+                  className={
+                    preset.generation_status === "complete"
+                      ? "capitalize bg-green-500/10 border-green-500/15 text-green-500"
+                      : "capitalize"
+                  }
+                >
+                  {preset.generation_status}
+                </Badge>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Score Breakdown */}
       {preset.fidelity_breakdown && (
-        <div className="mb-8 animate-fade-up" style={{ animationDelay: "60ms" }}>
+        <div className="mb-8 animate-fade-up [animation-delay:60ms]">
           <SectionHeading>Fidelity Analysis</SectionHeading>
-          <div className="glass-static">
-            <ScoreBreakdownCard breakdown={preset.fidelity_breakdown} />
-          </div>
+          <Card>
+            <CardContent className="p-0">
+              <ScoreBreakdownCard breakdown={preset.fidelity_breakdown} />
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Signal Chain */}
-      <div className="mb-8 animate-fade-up" style={{ animationDelay: "80ms" }}>
+      <div className="mb-8 animate-fade-up [animation-delay:80ms]">
         <SectionHeading>Signal Chain</SectionHeading>
         <SignalChainDiagram chain={chain} />
       </div>
 
       {/* Parameter Sheet */}
-      <div className="mb-8 animate-fade-up" style={{ animationDelay: "100ms" }}>
+      <div className="mb-8 animate-fade-up [animation-delay:100ms]">
         <SectionHeading>Parameter Sheet</SectionHeading>
-        <div className="glass-static overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--border)] bg-[rgba(255,255,255,0.02)]">
-                  <th className="text-left px-4 py-2.5 label">Slot</th>
-                  <th className="text-left px-4 py-2.5 label">Role</th>
-                  <th className="text-left px-4 py-2.5 label">Ampero Model</th>
-                  <th className="text-left px-4 py-2.5 label">Based On</th>
-                  <th className="text-left px-4 py-2.5 label">Confidence</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paramSheet.map((row, i) => (
-                  <tr
-                    key={i}
-                    className={`border-b border-[var(--border)] last:border-0 ${i % 2 === 1 ? "bg-[rgba(255,255,255,0.015)]" : ""}`}
-                  >
-                    <td className="px-4 py-2.5 font-mono text-xs text-[var(--text-muted)]">
-                      {row.slot}
-                    </td>
-                    <td className="px-4 py-2.5 capitalize text-xs font-medium text-[var(--text-secondary)]">
-                      {row.block_role}
-                    </td>
-                    <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">
-                      {row.model}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-[var(--text-muted)]">
-                      {row.canonical_reference}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1.5 rounded-full flex-1 max-w-[80px] bg-[var(--bg-elevated)]">
-                          <div
-                            className="h-full rounded-full transition-all"
-                            style={{
-                              width: `${Math.round(row.mapping_confidence * 100)}%`,
-                              background: confidenceColor(row.mapping_confidence),
-                            }}
-                          />
-                        </div>
-                        <span
-                          className="text-xs font-medium font-mono"
-                          style={{ color: confidenceColor(row.mapping_confidence) }}
-                        >
-                          {Math.round(row.mapping_confidence * 100)}%
-                        </span>
-                      </div>
-                    </td>
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">Slot</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">Role</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">Ampero Model</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">Based On</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">Confidence</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Expanded params */}
-          {paramSheet.some((r) => r.params && Object.keys(r.params).length > 0) && (
-            <div className="px-4 py-3 border-t border-[var(--border)]">
-              <CollapsibleSection title="Detailed Parameters">
-                <div className="space-y-4 pt-3">
-                  {paramSheet
-                    .filter((r) => r.params && Object.keys(r.params).length > 0)
-                    .map((row, i) => (
-                      <div key={i}>
-                        <div className="text-xs font-semibold mb-2 capitalize text-[var(--accent-gold)]">
-                          Slot {row.slot} — {row.block_role}: {row.model}
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
-                          {Object.entries(row.params).map(([key, val]) => (
+                </thead>
+                <tbody>
+                  {paramSheet.map((row, i) => (
+                    <tr
+                      key={i}
+                      className={`border-b border-border last:border-0 ${i % 2 === 1 ? "bg-muted/15" : ""}`}
+                    >
+                      <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
+                        {row.slot}
+                      </td>
+                      <td className="px-4 py-2.5 capitalize text-xs font-medium text-secondary-foreground">
+                        {row.block_role}
+                      </td>
+                      <td className="px-4 py-2.5 font-medium text-foreground">
+                        {row.model}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                        {row.canonical_reference}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 rounded-full flex-1 max-w-[80px] bg-muted">
                             <div
-                              key={key}
-                              className="px-3 py-2 rounded-lg bg-[var(--bg-deep)] border border-[var(--border)]"
-                            >
-                              <div className="label mb-0.5">{key}</div>
-                              <div className="text-sm font-mono font-medium text-[var(--text-primary)]">
-                                {String(val)}
-                              </div>
-                            </div>
-                          ))}
+                              className={`h-full rounded-full transition-all ${confidenceBgColor(row.mapping_confidence)}`}
+                              style={{
+                                width: `${Math.round(row.mapping_confidence * 100)}%`,
+                              }}
+                            />
+                          </div>
+                          <span
+                            className={`text-xs font-medium font-mono ${confidenceColor(row.mapping_confidence)}`}
+                          >
+                            {Math.round(row.mapping_confidence * 100)}%
+                          </span>
                         </div>
-                      </div>
-                    ))}
-                </div>
-              </CollapsibleSection>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-        </div>
+
+            {/* Expanded params */}
+            {paramSheet.some((r) => r.params && Object.keys(r.params).length > 0) && (
+              <div className="px-4 py-3 border-t border-border">
+                <CollapsibleSection title="Detailed Parameters">
+                  <div className="space-y-4 pt-3">
+                    {paramSheet
+                      .filter((r) => r.params && Object.keys(r.params).length > 0)
+                      .map((row, i) => (
+                        <div key={i}>
+                          <div className="text-xs font-semibold mb-2 capitalize text-primary">
+                            Slot {row.slot} — {row.block_role}: {row.model}
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+                            {Object.entries(row.params).map(([key, val]) => (
+                              <div
+                                key={key}
+                                className="px-3 py-2 rounded-lg bg-background border border-border"
+                              >
+                                <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-0.5">{key}</div>
+                                <div className="text-sm font-mono font-medium text-foreground">
+                                  {String(val)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CollapsibleSection>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="mb-8 animate-fade-up" style={{ animationDelay: "120ms" }}>
+        <div className="mb-8 animate-fade-up [animation-delay:120ms]">
           <SectionHeading>Warnings</SectionHeading>
-          <div className="glass-static p-4 border-[rgba(245,158,11,0.15)]">
-            <div className="space-y-2">
-              {warnings.map((w, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 mt-0.5 text-[#f59e0b]">
-                    <path
-                      d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span className="text-sm text-[#fbbf24]">{w}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <Card className="border-amber-500/15">
+            <CardContent className="p-4">
+              <div className="space-y-2">
+                {warnings.map((w, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <AlertTriangle className="size-4 flex-shrink-0 mt-0.5 text-amber-500" />
+                    <span className="text-sm text-amber-300">{w}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {/* Generation Log */}
       {logs.length > 0 && (
-        <div className="mb-8 animate-fade-up" style={{ animationDelay: "140ms" }}>
+        <div className="mb-8 animate-fade-up [animation-delay:140ms]">
           <CollapsibleSection title="Generation Log">
-            <div className="mt-3 rounded-lg p-4 font-mono text-xs space-y-1.5 overflow-x-auto bg-[var(--bg-deep)] border border-[var(--border)]">
+            <div className="mt-3 rounded-lg p-4 font-mono text-xs space-y-1.5 overflow-x-auto bg-background border border-border">
               {logs.map((log, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <span className="flex-shrink-0 w-4 text-center" style={{ color: STATUS_COLORS[log.status] || "var(--text-muted)" }}>
-                    {STATUS_ICONS[log.status] || "·"}
+                  <span className={`flex-shrink-0 w-4 text-center ${STATUS_COLORS[log.status] || "text-muted-foreground"}`}>
+                    {STATUS_ICONS[log.status] || "\u00B7"}
                   </span>
-                  <span className="flex-shrink-0 min-w-[140px] text-[var(--text-muted)]">
+                  <span className="flex-shrink-0 min-w-[140px] text-muted-foreground">
                     {log.step_name}
                   </span>
-                  <span className="text-[var(--text-secondary)]">{log.message}</span>
+                  <span className="text-secondary-foreground">{log.message}</span>
                 </div>
               ))}
             </div>
@@ -359,21 +370,26 @@ export default function PresetPage() {
       )}
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-3 justify-center mt-10 animate-fade-up" style={{ animationDelay: "160ms" }}>
-        <GoldButton onClick={handleDownloadPrst} loading={downloadLoading}>
-          Download .prst
-        </GoldButton>
+      <div className="flex flex-wrap gap-3 justify-center mt-10 animate-fade-up [animation-delay:160ms]">
+        <Button onClick={handleDownloadPrst} disabled={downloadLoading} size="lg">
+          <Download className="size-4" />
+          {downloadLoading ? "Exporting..." : "Download .prst"}
+        </Button>
         <Link href={`/generate/${tp.id}`}>
-          <GoldButton variant="ghost">
+          <Button variant="outline" size="lg">
+            <RefreshCw className="size-4" />
             Generate with Different Settings
-          </GoldButton>
+          </Button>
         </Link>
-        <Link href="/" className="btn-ghost">
-          Back to Library
+        <Link href="/">
+          <Button variant="outline" size="lg">
+            <ArrowLeft className="size-4" />
+            Back to Library
+          </Button>
         </Link>
       </div>
       {downloadError && (
-        <p className="text-center mt-2 text-sm text-[#ef4444]">{downloadError}</p>
+        <p className="text-center mt-2 text-sm text-destructive">{downloadError}</p>
       )}
     </div>
   );

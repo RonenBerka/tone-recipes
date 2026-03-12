@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { ToneProfile, ToneProfileBlock, ToneProfileTag, EvidenceSource, EvidenceClaim } from "@/lib/types";
 import { SignalChainDiagram } from "@/components/SignalChainDiagram";
 import { ResearchEvidenceCard } from "@/components/ResearchEvidenceCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { GoldButton } from "@/components/ui/GoldButton";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 const GAIN_LABELS: Record<string, string> = {
@@ -26,7 +29,7 @@ function scoreStyle(confidence: number) {
   if (confidence >= 85)
     return { bg: "rgba(34,197,94,0.10)", color: "#22c55e", border: "rgba(34,197,94,0.18)" };
   if (confidence >= 70)
-    return { bg: "var(--accent-gold-muted)", color: "var(--accent-gold)", border: "rgba(212,168,50,0.18)" };
+    return { bg: "rgba(212,168,50,0.08)", color: "hsl(var(--primary))", border: "rgba(212,168,50,0.18)" };
   return { bg: "rgba(245,158,11,0.10)", color: "#f59e0b", border: "rgba(245,158,11,0.18)" };
 }
 
@@ -111,7 +114,7 @@ export default function ToneRecipePage() {
 
   if (!profile) {
     return (
-      <div className="text-center py-20 text-[var(--text-muted)]">
+      <div className="text-center py-20 text-muted-foreground">
         Tone profile not found.
       </div>
     );
@@ -141,25 +144,25 @@ export default function ToneRecipePage() {
   return (
     <div>
       {/* Breadcrumb */}
-      <div className="text-sm mb-6 animate-fade-up text-[var(--text-muted)]">
-        <Link href="/" className="transition-colors hover:text-[var(--text-primary)]">
+      <div className="text-sm mb-6 animate-fade-up text-muted-foreground">
+        <Link href="/" className="transition-colors hover:text-foreground">
           Library
         </Link>
         <span className="mx-2">/</span>
-        <span className="text-[var(--text-secondary)]">
+        <span className="text-muted-foreground">
           {profile.songs.artists.name} — {profile.songs.title}
         </span>
       </div>
 
       {/* Hero header */}
       <div className="mb-8 animate-fade-up" style={{ animationDelay: "40ms" }}>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           {profile.songs.artists.name}
         </h1>
-        <h2 className="text-lg mt-1 text-[var(--text-secondary)]">
+        <h2 className="text-lg mt-1 text-muted-foreground">
           {profile.songs.title}
         </h2>
-        <p className="text-sm font-medium mt-2 text-[var(--accent-gold)]">
+        <p className="text-sm font-medium mt-2 text-primary">
           {profile.name}
         </p>
       </div>
@@ -167,37 +170,41 @@ export default function ToneRecipePage() {
       {/* Metadata chips */}
       <div className="grid grid-cols-3 gap-3 mb-4 animate-fade-up" style={{ animationDelay: "80ms" }}>
         {metaChips.map((chip) => (
-          <div key={chip.label} className="glass-static p-4">
-            <div className="label mb-1">{chip.label}</div>
-            <div className="font-bold text-lg capitalize text-[var(--text-primary)]">
-              {chip.value}
-            </div>
-          </div>
+          <Card key={chip.label} size="sm">
+            <CardContent>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{chip.label}</div>
+              <div className="font-bold text-lg capitalize text-foreground">
+                {chip.value}
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       {/* Research Score */}
-      <div className="glass-static p-4 mb-8 flex items-center gap-4 animate-fade-up" style={{ animationDelay: "100ms" }}>
-        <div
-          className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-base font-bold"
-          style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
-        >
-          {confidence}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="label mb-0.5">Research Score</div>
-          <div className="text-sm leading-snug text-[var(--text-secondary)]">
-            {confidence >= 85
-              ? "Well-documented tone — based on rig rundowns, interviews, and verified gear lists."
-              : confidence >= 70
-                ? "Solid research — based on community consensus and published references."
-                : "Partially documented — some gear details are inferred from available sources."}
+      <Card className="mb-8 animate-fade-up" style={{ animationDelay: "100ms" }}>
+        <CardContent className="flex items-center gap-4">
+          <div
+            className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-base font-bold"
+            style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+          >
+            {confidence}
           </div>
-          <div className="confidence-bar mt-2">
-            <div className="confidence-bar-fill" style={{ width: `${confidence}%` }} />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">Research Score</div>
+            <div className="text-sm leading-snug text-muted-foreground">
+              {confidence >= 85
+                ? "Well-documented tone — based on rig rundowns, interviews, and verified gear lists."
+                : confidence >= 70
+                  ? "Solid research — based on community consensus and published references."
+                  : "Partially documented — some gear details are inferred from available sources."}
+            </div>
+            <div className="confidence-bar mt-2">
+              <div className="confidence-bar-fill" style={{ width: `${confidence}%` }} />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Research Evidence */}
       <div className="mb-8 animate-fade-up" style={{ animationDelay: "120ms" }}>
@@ -214,9 +221,11 @@ export default function ToneRecipePage() {
         <SectionHeading subtitle="The gear chain that defines this tone">
           Canonical Signal Chain
         </SectionHeading>
-        <div className="glass-static p-5">
-          <SignalChainDiagram chain={chainBlocks} showMapping={false} />
-        </div>
+        <Card>
+          <CardContent>
+            <SignalChainDiagram chain={chainBlocks} showMapping={false} />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Gear blocks detail */}
@@ -226,20 +235,19 @@ export default function ToneRecipePage() {
         </SectionHeading>
         <div className="space-y-1.5">
           {blocks.map((b) => (
-            <div
-              key={b.id}
-              className="glass-static flex items-center justify-between px-4 py-2.5"
-            >
-              <div className="flex items-center gap-3">
-                <span className="label w-24">{b.block_role}</span>
-                <span className="font-medium text-sm text-[var(--text-primary)]">
-                  {b.canonical_models.canonical_name}
+            <Card key={b.id} size="sm">
+              <CardContent className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs uppercase tracking-wider text-muted-foreground w-24">{b.block_role}</span>
+                  <span className="font-medium text-sm text-foreground">
+                    {b.canonical_models.canonical_name}
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {b.canonical_models.family_name || b.canonical_models.subcategory}
                 </span>
-              </div>
-              <span className="text-xs text-[var(--text-muted)]">
-                {b.canonical_models.family_name || b.canonical_models.subcategory}
-              </span>
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
@@ -250,30 +258,30 @@ export default function ToneRecipePage() {
           <SectionHeading>Tags</SectionHeading>
           <div className="flex flex-wrap gap-1.5">
             {tags.map((t) => (
-              <span key={t.id} className="chip">{t.tag}</span>
+              <Badge key={t.id} variant="secondary">{t.tag}</Badge>
             ))}
           </div>
         </div>
       )}
 
       {/* Generate CTA */}
-      <div
-        className="glass-static p-8 text-center animate-fade-up border-[rgba(212,168,50,0.12)]"
+      <Card
+        className="text-center animate-fade-up border-primary/10"
         style={{ animationDelay: "200ms" }}
       >
-        <h3 className="text-lg font-bold mb-2">Generate Device Preset</h3>
-        <p className="text-sm mb-5 max-w-md mx-auto text-[var(--text-secondary)]">
-          Select your device, guitar, and output to generate a custom preset tailored to this tone.
-        </p>
-        <Link href={`/generate/${id}`}>
-          <GoldButton className="inline-flex items-center gap-2">
-            Generate Preset
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M1 7h12m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </GoldButton>
-        </Link>
-      </div>
+        <CardContent className="py-4">
+          <h3 className="text-lg font-bold mb-2 text-foreground">Generate Device Preset</h3>
+          <p className="text-sm mb-5 max-w-md mx-auto text-muted-foreground">
+            Select your device, guitar, and output to generate a custom preset tailored to this tone.
+          </p>
+          <Link href={`/generate/${id}`}>
+            <Button className="inline-flex items-center gap-2">
+              Generate Preset
+              <ArrowRight className="size-4" />
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
     </div>
   );
 }
