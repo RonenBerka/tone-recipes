@@ -38,6 +38,20 @@ export interface ToneProfileTag {
   tag: string;
 }
 
+export interface ToneProfileListItem {
+  id: string;
+  name: string;
+  section_type: string;
+  gain_level: number;
+  confidence_score: number;
+  created_at: string;
+  song_title: string;
+  artist_name: string;
+  tags: string[];
+  block_roles: string[];
+  download_count: number;
+}
+
 export interface TonalBias {
   attack: number;
   brightness: number;

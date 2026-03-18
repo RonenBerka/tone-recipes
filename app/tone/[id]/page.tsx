@@ -5,8 +5,9 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { ToneProfile, ToneProfileBlock, ToneProfileTag, EvidenceSource, EvidenceClaim } from "@/lib/types";
+import { ToneProfile, ToneProfileBlock, ToneProfileTag, EvidenceSource, EvidenceClaim, ChainBlock } from "@/lib/types";
 import { SignalChainDiagram } from "@/components/SignalChainDiagram";
+import { BlockInspectorSheet } from "@/components/BlockInspectorSheet";
 import { ResearchEvidenceCard } from "@/components/ResearchEvidenceCard";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export default function ToneRecipePage() {
   const [sources, setSources] = useState<EvidenceSource[]>([]);
   const [claims, setClaims] = useState<EvidenceClaim[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inspectedBlock, setInspectedBlock] = useState<ChainBlock | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -223,7 +225,7 @@ export default function ToneRecipePage() {
         </SectionHeading>
         <Card>
           <CardContent>
-            <SignalChainDiagram chain={chainBlocks} showMapping={false} />
+            <SignalChainDiagram chain={chainBlocks} showMapping={false} onBlockClick={(block) => setInspectedBlock(block)} />
           </CardContent>
         </Card>
       </div>
@@ -282,6 +284,13 @@ export default function ToneRecipePage() {
           </Link>
         </CardContent>
       </Card>
+
+      {/* Block Inspector Sheet */}
+      <BlockInspectorSheet
+        block={inspectedBlock}
+        open={!!inspectedBlock}
+        onOpenChange={(open) => { if (!open) setInspectedBlock(null); }}
+      />
     </div>
   );
 }

@@ -69,12 +69,14 @@ function GearBlock({
   isActive,
   onHover,
   onLeave,
+  onClick,
   showMapping = true,
 }: {
   block: ChainBlock;
   isActive: boolean;
   onHover: () => void;
   onLeave: () => void;
+  onClick?: () => void;
   showMapping?: boolean;
 }) {
   const categoryColor = CATEGORY_COLORS[block.block_role] || "#64748b";
@@ -88,9 +90,10 @@ function GearBlock({
 
   return (
     <div
-      className="flex flex-col items-center flex-shrink-0 group"
+      className={`flex flex-col items-center flex-shrink-0 group ${onClick ? "cursor-pointer" : ""}`}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
+      onClick={onClick}
     >
       {/* Block container */}
       <div
@@ -234,7 +237,7 @@ function GearBlock({
 }
 
 /* ── Main signal chain diagram ── */
-export function SignalChainDiagram({ chain, showMapping = true }: { chain: ChainBlock[]; showMapping?: boolean }) {
+export function SignalChainDiagram({ chain, showMapping = true, onBlockClick }: { chain: ChainBlock[]; showMapping?: boolean; onBlockClick?: (block: ChainBlock, index: number) => void }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   if (!chain || chain.length === 0) {
@@ -321,6 +324,7 @@ export function SignalChainDiagram({ chain, showMapping = true }: { chain: Chain
                 isActive={activeIndex === i}
                 onHover={() => setActiveIndex(i)}
                 onLeave={() => setActiveIndex(null)}
+                onClick={onBlockClick ? () => onBlockClick(block, i) : undefined}
                 showMapping={showMapping}
               />
               {i < chain.length - 1 && <Cable />}

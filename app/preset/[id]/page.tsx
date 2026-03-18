@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Download, RefreshCw, ArrowLeft, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { SignalChainDiagram } from "@/components/SignalChainDiagram";
+import { BlockInspectorSheet } from "@/components/BlockInspectorSheet";
 import { FidelityBadge } from "@/components/FidelityBadge";
 import { ScoreBreakdownCard } from "@/components/ScoreBreakdownCard";
 import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
@@ -84,6 +85,7 @@ export default function PresetPage() {
   const params = useParams();
   const id = params.id as string;
   const [preset, setPreset] = useState<PresetData | null>(null);
+  const [inspectedBlock, setInspectedBlock] = useState<ChainBlock | null>(null);
   const [logs, setLogs] = useState<
     { step_name: string; status: string; message: string }[]
   >([]);
@@ -234,7 +236,7 @@ export default function PresetPage() {
       {/* Signal Chain */}
       <div className="mb-8 animate-fade-up [animation-delay:80ms]">
         <SectionHeading>Signal Chain</SectionHeading>
-        <SignalChainDiagram chain={chain} />
+        <SignalChainDiagram chain={chain} onBlockClick={(block) => setInspectedBlock(block)} />
       </div>
 
       {/* Parameter Sheet */}
@@ -391,6 +393,13 @@ export default function PresetPage() {
       {downloadError && (
         <p className="text-center mt-2 text-sm text-destructive">{downloadError}</p>
       )}
+
+      {/* Block Inspector Sheet */}
+      <BlockInspectorSheet
+        block={inspectedBlock}
+        open={!!inspectedBlock}
+        onOpenChange={(open) => { if (!open) setInspectedBlock(null); }}
+      />
     </div>
   );
 }

@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import { ToneProfile } from "@/lib/types";
+import { ToneProfileListItem } from "@/lib/types";
 import { ToneCard } from "@/components/ToneCard";
+import { SortDropdown, SortKey } from "@/components/SortDropdown";
 import { Toggle } from "@/components/ui/toggle";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -17,6 +18,13 @@ const GAIN_LEVELS = [
   { label: "Crunch", value: "0.5" },
   { label: "High Gain", value: "0.8" },
 ];
+
+const SORT_MAP: Record<SortKey, { column: string; ascending: boolean }> = {
+  confidence: { column: "confidence_score", ascending: false },
+  newest: { column: "created_at", ascending: false },
+  popular: { column: "download_count", ascending: false },
+  artist: { column: "artist_name", ascending: true },
+};
 
 function SkeletonCard() {
   return (
@@ -39,10 +47,11 @@ function SkeletonCard() {
 }
 
 export default function ToneLibrary() {
-  const [profiles, setProfiles] = useState<ToneProfile[]>([]);
+  const [profiles, setProfiles] = useState<ToneProfileListItem[]>([]);
   const [search, setSearch] = useState("");
   const [sectionFilter, setSectionFilter] = useState("all");
   const [gainFilter, setGainFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<SortKey>("confidence");
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
@@ -50,13 +59,14 @@ export default function ToneLibrary() {
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
+    const sort = SORT_MAP[sortBy];
     let query = supabase
       .from("tone_profiles_search")
       .select(
-        "id, name, section_type, gain_level, ambience_level, confidence_score, song_id, song_title, artist_id, artist_name",
+        "id, name, section_type, gain_level, confidence_score, created_at, song_title, artist_name, tags, block_roles, download_count",
         { count: "exact" }
       )
-      .order("confidence_score", { ascending: false })
+      .order(sort.column, { ascending: sort.ascending })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
     if (sectionFilter !== "all") query = query.eq("section_type", sectionFilter);
@@ -68,29 +78,27 @@ export default function ToneLibrary() {
 
     const { data, count, error } = await query;
     if (!error && data) {
-      const profiles = (data as Record<string, unknown>[]).map((d) => ({
+      const items: ToneProfileListItem[] = (data as Record<string, unknown>[]).map((d) => ({
         id: d.id as string,
         name: d.name as string,
         section_type: d.section_type as string,
         gain_level: d.gain_level as number,
-        ambience_level: d.ambience_level as number,
         confidence_score: d.confidence_score as number,
-        research_status: null,
-        evidence_summary: null,
-        songs: {
-          id: d.song_id as string,
-          title: d.song_title as string,
-          artists: { id: d.artist_id as string, name: d.artist_name as string },
-        },
+        created_at: d.created_at as string,
+        song_title: d.song_title as string,
+        artist_name: d.artist_name as string,
+        tags: (d.tags as string[]) || [],
+        block_roles: (d.block_roles as string[]) || [],
+        download_count: (d.download_count as number) || 0,
       }));
-      setProfiles(profiles);
+      setProfiles(items);
       setTotal(count || 0);
     }
     setLoading(false);
-  }, [search, sectionFilter, gainFilter, page]);
+  }, [search, sectionFilter, gainFilter, sortBy, page]);
 
   useEffect(() => { fetchProfiles(); }, [fetchProfiles]);
-  useEffect(() => { setPage(0); }, [search, sectionFilter, gainFilter]);
+  useEffect(() => { setPage(0); }, [search, sectionFilter, gainFilter, sortBy]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -111,17 +119,20 @@ export default function ToneLibrary() {
         </p>
       </div>
 
-      {/* Search */}
+      {/* Search + Sort */}
       <div className="max-w-xl mx-auto mb-8 animate-fade-up" style={{ animationDelay: "40ms" }}>
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search by artist, song, or tone name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-card ring-1 ring-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by artist, song, or tone name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-card ring-1 ring-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            />
+          </div>
+          <SortDropdown value={sortBy} onChange={setSortBy} />
         </div>
       </div>
 

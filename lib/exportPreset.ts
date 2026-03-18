@@ -26,4 +26,15 @@ export async function downloadPrst(
   a.download = `${presetName.replace(/[^a-zA-Z0-9_\- ]/g, "").trim().replace(/\s+/g, "_")}.prst`;
   a.click();
   URL.revokeObjectURL(url);
+
+  // Increment download count (fire-and-forget)
+  fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_download_count`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      apikey: SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ preset_id: presetId }),
+  }).catch(() => {});
 }
