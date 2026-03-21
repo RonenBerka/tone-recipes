@@ -68,7 +68,7 @@ export default function RigsPage() {
           className="hw-mode-btn"
           style={{ padding: "8px 20px", width: "auto" }}
           onClick={() => router.push("/")}>
-          ← CATALOG
+          ← BACK TO CATALOG
         </button>
       </div>
 

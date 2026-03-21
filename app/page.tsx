@@ -130,6 +130,7 @@ export default function HomePage() {
   return (
     <HardwareChassis
       fullWidth
+      isHome
       displayLabel="ARTIST //"
       title={selectedArtist?.name ?? "—"}
       displayLabel2={selectedArtist ? "RECIPES //" : undefined}
@@ -289,13 +290,13 @@ export default function HomePage() {
                        tone.research_status === "researched" ? "RESEARCHED" : "PARTIAL"}
                     </div>
 
-                    {/* Load button */}
+                    {/* Open recipe button */}
                     <button
                       onClick={(e) => { e.stopPropagation(); router.push(`/tone/${tone.id}`); }}
                       className="text-[10px] font-extrabold uppercase px-3 py-1.5 flex-shrink-0"
                       style={{ background: "#111", color: "#e08b26", border: "none" }}
                     >
-                      LOAD
+                      OPEN →
                     </button>
                   </div>
                 ))
@@ -313,7 +314,7 @@ export default function HomePage() {
               style={{ padding: "7px 20px", width: "auto" }}
               onClick={() => router.push("/rigs")}
             >
-              MY RIGS →
+              VIEW MY RIGS →
             </button>
           </div>
         </div>

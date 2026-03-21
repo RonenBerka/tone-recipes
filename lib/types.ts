@@ -143,6 +143,42 @@ export interface FidelityBreakdown {
   source_summary: SourceInfo[];
 }
 
+export interface ProposedChainBlock {
+  slot: number;
+  block_role: string;
+  normalized_name: string;
+  canonical_model_id: string | null;
+  source_count: number;
+  confidence: number;
+}
+
+export interface ProposedChain {
+  id: string;
+  song_id: string;
+  chain_text: string;
+  chain_json: ProposedChainBlock[];
+  confidence_score: number;
+  confidence_label: "High" | "Medium" | "Low" | "Speculative";
+  evidence_summary: { gear: string; type: string; sources: number; confidence: number }[];
+  status: "draft" | "approved" | "rejected";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AnalyzeResult {
+  song_id: string;
+  source_url: string;
+  source_type: string;
+  extracted_count: number;
+  proposed_chain_id: string;
+  chain_text: string;
+  chain_json: ProposedChainBlock[];
+  confidence_score: number;
+  confidence_label: string;
+  evidence_summary: { gear: string; type: string; sources: number; confidence: number }[];
+  all_mentions: { name: string; type: string | null; brand: string | null; count: number }[];
+}
+
 export interface GeneratedPreset {
   preset_id: string;
   preset_name: string;

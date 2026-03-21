@@ -84,7 +84,6 @@ interface SourceRow {
   title: string;
   url: string | null;
   author_name: string | null;
-  base_reliability_score: number | null;
   snippet: string | null;
 }
 
@@ -156,12 +155,14 @@ export default function ToneRecipePage() {
 
       if (profileRes.data) {
         setProfile(profileRes.data as unknown as ToneProfile);
-        // Fetch sources by song_id
-        const songId = (profileRes.data as any).songs?.id;
-        if (songId) {
+        // Sources are linked at artist level — query by artist_id, exclude internal seed entries
+        const artistId = (profileRes.data as any).songs?.artists?.id;
+        if (artistId) {
           supabase.from("sources")
-            .select("id, source_type, title, url, author_name, base_reliability_score, snippet")
-            .eq("song_id", songId)
+            .select("id, source_type, title, url, author_name, snippet")
+            .eq("artist_id", artistId)
+            .neq("source_type", "manual_research")
+            .not("url", "is", null)
             .order("base_reliability_score", { ascending: false })
             .then(({ data }) => { if (data) setSources(data as SourceRow[]); });
         }
@@ -384,9 +385,6 @@ export default function ToneRecipePage() {
                     {sources.map((src) => {
                       const typeLabel = SOURCE_TYPE_LABELS[src.source_type] || src.source_type.toUpperCase();
                       const typeColor = SOURCE_TYPE_COLORS[src.source_type] || "#968a7c";
-                      const reliability = src.base_reliability_score
-                        ? Math.round(src.base_reliability_score * 100)
-                        : null;
                       return (
                         <div key={src.id} className="px-4 py-2.5 flex items-start gap-3"
                           style={{ borderBottom: "1px solid rgba(0,0,0,0.1)" }}>
@@ -422,42 +420,12 @@ export default function ToneRecipePage() {
                               </p>
                             )}
                           </div>
-                          {/* Reliability */}
-                          {reliability !== null && (
-                            <div className="flex-shrink-0 flex flex-col items-center gap-0.5">
-                              <span className="text-[10px] font-black font-mono"
-                                style={{ color: reliability >= 80 ? "#22c55e" : reliability >= 60 ? "#e08b26" : "#968a7c" }}>
-                                {reliability}%
-                              </span>
-                              <span className="text-[7px] font-bold uppercase" style={{ color: "#968a7c" }}>REL</span>
-                            </div>
-                          )}
                         </div>
                       );
                     })}
                   </div>
                 )}
 
-                {/* Evidence summary fallback if no individual sources loaded */}
-                {sources.length === 0 && profile.evidence_summary && (
-                  <div className="px-4 py-3 mt-1"
-                    style={{ background: "rgba(0,0,0,0.08)", borderLeft: "3px solid rgba(0,0,0,0.25)" }}>
-                    <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: "#333" }}>
-                      RESEARCH SUMMARY
-                    </div>
-                    <div className="text-[11px] font-bold" style={{ color: "#2a1e0a" }}>
-                      {profile.evidence_summary.source_count > 0 && (
-                        <span>{profile.evidence_summary.source_count} SOURCE{profile.evidence_summary.source_count !== 1 ? "S" : ""} · </span>
-                      )}
-                      {profile.evidence_summary.claim_count > 0 && (
-                        <span>{profile.evidence_summary.claim_count} CLAIM{profile.evidence_summary.claim_count !== 1 ? "S" : ""} · </span>
-                      )}
-                      {profile.evidence_summary.has_rig_rundown && <span>RIG RUNDOWN · </span>}
-                      {profile.evidence_summary.has_interview && <span>INTERVIEW · </span>}
-                      RELIABILITY: {Math.round(profile.evidence_summary.avg_source_reliability * 100)}%
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 

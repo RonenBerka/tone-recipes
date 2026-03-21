@@ -10,6 +10,7 @@ interface HardwareChassisProps {
   displayLabel2?: string;
   className?: string;
   fullWidth?: boolean;
+  isHome?: boolean; // when true: logo shows tagline, not "back" link
 }
 
 function Screw({ pos }: { pos: "tl" | "tr" | "bl" | "br" }) {
@@ -30,6 +31,7 @@ export function HardwareChassis({
   displayLabel2 = "SONG //",
   className = "",
   fullWidth = false,
+  isHome = false,
 }: HardwareChassisProps) {
   return (
     <div
@@ -59,7 +61,7 @@ export function HardwareChassis({
                 className="text-[10px] sm:text-[11px] font-extrabold tracking-[0.15em] uppercase mt-1"
                 style={{ color: "#e08b26", textShadow: "1px 1px 0 rgba(0,0,0,0.8)" }}
               >
-                SIGNAL CHAIN ENCYCLOPEDIA
+                {isHome ? "SIGNAL CHAIN ENCYCLOPEDIA" : "← BACK TO HOME"}
               </p>
             </div>
           </Link>
