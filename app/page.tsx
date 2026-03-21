@@ -155,7 +155,7 @@ export default function HomePage() {
       </div>
 
       {/* Main browser: sidebar + catalog */}
-      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6" style={{ minHeight: 480 }}>
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
 
         {/* Sidebar — Artists */}
         <div className="flex flex-col gap-3 w-full lg:w-[260px] lg:flex-shrink-0">
@@ -203,7 +203,7 @@ export default function HomePage() {
         {/* Right — Songs/Tones */}
         <div className="flex flex-col gap-3 flex-1 min-w-0">
           <div className="hw-label">AVAILABLE RECIPES</div>
-          <div className="hw-screen flex flex-col flex-1" style={{ minHeight: 360 }}>
+          <div className="hw-screen flex flex-col">
 
             {/* Screen header */}
             <div
@@ -221,8 +221,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Tone list */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Tone list — ~5 rows visible, then scroll */}
+            <div className="overflow-y-auto" style={{ maxHeight: 268 }}>
               {loadingTones ? (
                 <div className="text-[11px] font-bold py-8 text-center" style={{ color: "#4a3e30" }}>
                   LOADING...
