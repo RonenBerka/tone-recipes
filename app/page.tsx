@@ -1,213 +1,307 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import Image from "next/image";
+import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ToneProfileListItem } from "@/lib/types";
-import { ToneCard } from "@/components/ToneCard";
-import { SortDropdown, SortKey } from "@/components/SortDropdown";
-import { Toggle } from "@/components/ui/toggle";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { Search } from "lucide-react";
+import { HardwareChassis } from "@/components/HardwareChassis";
 
-const SECTION_TYPES = ["all", "rhythm", "lead", "solo", "riff", "intro", "verse", "chorus"];
-const GAIN_LEVELS = [
-  { label: "All Gains", value: "all" },
-  { label: "Clean", value: "0.3" },
-  { label: "Crunch", value: "0.5" },
-  { label: "High Gain", value: "0.8" },
-];
-
-const SORT_MAP: Record<SortKey, { column: string; ascending: boolean }> = {
-  confidence: { column: "confidence_score", ascending: false },
-  newest: { column: "created_at", ascending: false },
-  popular: { column: "download_count", ascending: false },
-  artist: { column: "artist_name", ascending: true },
-};
-
-function SkeletonCard() {
-  return (
-    <div className="rounded-xl ring-1 ring-border bg-card p-4 space-y-3">
-      <div className="flex justify-between">
-        <div className="space-y-2 flex-1">
-          <Skeleton className="h-5 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-        <Skeleton className="h-9 w-9 rounded-full" />
-      </div>
-      <Skeleton className="h-4 w-2/5" />
-      <div className="flex gap-1.5">
-        <Skeleton className="h-5 w-16 rounded-full" />
-        <Skeleton className="h-5 w-14 rounded-full" />
-      </div>
-      <Skeleton className="h-0.5 w-full" />
-    </div>
-  );
+interface ArtistRow {
+  id: string;
+  name: string;
+  count: number;
 }
 
-export default function ToneLibrary() {
-  const [profiles, setProfiles] = useState<ToneProfileListItem[]>([]);
+interface ToneRow {
+  id: string;
+  name: string;
+  section_type: string;
+  gain_level: number;
+  confidence_score: number;
+  research_status: string;
+  songs: { id: string; title: string };
+}
+
+const SECTION_SHORT: Record<string, string> = {
+  lead: "LEAD",
+  solo: "SOLO",
+  rhythm: "RHTM",
+  verse: "VERS",
+  chorus: "CHOR",
+  general: "GEN",
+  ambient_layer: "AMB",
+  intro: "INTRO",
+  riff: "RIFF",
+};
+
+const GAIN_SHORT: Record<string, string> = {
+  "0.3": "CLEAN",
+  "0.5": "CRUNCH",
+  "0.8": "HI-GAIN",
+};
+
+const FILTER_SECTIONS = ["ALL", "LEAD", "SOLO", "RHYTHM", "BLUES", "CLEAN"];
+
+export default function HomePage() {
+  const router = useRouter();
+  const [artists, setArtists] = useState<ArtistRow[]>([]);
+  const [selectedArtist, setSelectedArtist] = useState<ArtistRow | null>(null);
+  const [tones, setTones] = useState<ToneRow[]>([]);
   const [search, setSearch] = useState("");
-  const [sectionFilter, setSectionFilter] = useState("all");
-  const [gainFilter, setGainFilter] = useState("all");
-  const [sortBy, setSortBy] = useState<SortKey>("confidence");
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [total, setTotal] = useState(0);
-  const PAGE_SIZE = 21;
+  const [activeFilter, setActiveFilter] = useState("ALL");
+  const [loadingArtists, setLoadingArtists] = useState(true);
+  const [loadingTones, setLoadingTones] = useState(false);
 
-  const fetchProfiles = useCallback(async () => {
-    setLoading(true);
-    const sort = SORT_MAP[sortBy];
-    let query = supabase
-      .from("tone_profiles_search")
-      .select(
-        "id, name, section_type, gain_level, confidence_score, created_at, song_title, artist_name, tags, block_roles, download_count",
-        { count: "exact" }
-      )
-      .order(sort.column, { ascending: sort.ascending })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+  useEffect(() => {
+    async function loadArtists() {
+      const { data } = await supabase
+        .from("tone_profiles")
+        .select("id, songs!inner(id, artists!inner(id, name))");
 
-    if (sectionFilter !== "all") query = query.eq("section_type", sectionFilter);
-    if (gainFilter !== "all") query = query.eq("gain_level", parseFloat(gainFilter));
-    if (search.trim()) {
-      const s = search.trim();
-      query = query.or(`artist_name.ilike.%${s}%,song_title.ilike.%${s}%,name.ilike.%${s}%`);
+      if (!data) return;
+
+      const counts: Record<string, { name: string; count: number }> = {};
+      for (const row of data as any[]) {
+        const artist = row.songs.artists;
+        if (!counts[artist.id]) counts[artist.id] = { name: artist.name, count: 0 };
+        counts[artist.id].count++;
+      }
+
+      const sorted = Object.entries(counts)
+        .map(([id, v]) => ({ id, name: v.name, count: v.count }))
+        .sort((a, b) => b.count - a.count);
+
+      setArtists(sorted);
+      if (sorted.length > 0) setSelectedArtist(sorted[0]);
+      setLoadingArtists(false);
     }
+    loadArtists();
+  }, []);
 
-    const { data, count, error } = await query;
-    if (!error && data) {
-      const items: ToneProfileListItem[] = (data as Record<string, unknown>[]).map((d) => ({
-        id: d.id as string,
-        name: d.name as string,
-        section_type: d.section_type as string,
-        gain_level: d.gain_level as number,
-        confidence_score: d.confidence_score as number,
-        created_at: d.created_at as string,
-        song_title: d.song_title as string,
-        artist_name: d.artist_name as string,
-        tags: (d.tags as string[]) || [],
-        block_roles: (d.block_roles as string[]) || [],
-        download_count: (d.download_count as number) || 0,
-      }));
-      setProfiles(items);
-      setTotal(count || 0);
-    }
-    setLoading(false);
-  }, [search, sectionFilter, gainFilter, sortBy, page]);
+  useEffect(() => {
+    if (!selectedArtist) return;
+    setLoadingTones(true);
 
-  useEffect(() => { fetchProfiles(); }, [fetchProfiles]);
-  useEffect(() => { setPage(0); }, [search, sectionFilter, gainFilter, sortBy]);
+    supabase
+      .from("tone_profiles")
+      .select("id, name, section_type, gain_level, confidence_score, research_status, songs!inner(id, title, artists!inner(id, name))")
+      .eq("songs.artists.id", selectedArtist.id)
+      .order("confidence_score", { ascending: false })
+      .then(({ data }) => {
+        if (data) setTones(data as unknown as ToneRow[]);
+        setLoadingTones(false);
+      });
+  }, [selectedArtist]);
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const filteredTones = useMemo(() => {
+    return tones.filter((t) => {
+      const matchSearch =
+        !search ||
+        t.name.toLowerCase().includes(search.toLowerCase()) ||
+        t.songs.title.toLowerCase().includes(search.toLowerCase());
+      const matchFilter =
+        activeFilter === "ALL" ||
+        t.section_type?.toUpperCase() === activeFilter ||
+        (activeFilter === "CLEAN" && t.gain_level <= 0.3);
+      return matchSearch && matchFilter;
+    });
+  }, [tones, search, activeFilter]);
+
+  const initials = (name: string) =>
+    name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
 
   return (
-    <div>
-      {/* Hero */}
-      <div className="text-center mb-10 pt-4 animate-fade-up">
-        <Image src="/logo.jpg" alt="Tone Recipes" width={420} height={236} className="mx-auto mb-5 rounded-xl object-contain" priority />
-        <p className="text-base max-w-xl mx-auto text-muted-foreground leading-relaxed">
-          {total > 0 ? (
-            <>
-              <span className="font-semibold text-primary">{total}</span>{" "}
-              iconic guitar tones, analyzed and ready to generate Ampero II Stomp presets.
-            </>
-          ) : (
-            "Browse iconic guitar tones and generate custom presets."
-          )}
-        </p>
-      </div>
+    <HardwareChassis fullWidth displayLabel="SYSTEM //" title="CATALOG BROWSER">
 
-      {/* Search + Sort */}
-      <div className="max-w-xl mx-auto mb-8 animate-fade-up" style={{ animationDelay: "40ms" }}>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search by artist, song, or tone name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-card ring-1 ring-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-            />
-          </div>
-          <SortDropdown value={sortBy} onChange={setSortBy} />
+      {/* Search + Filter bar */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Search input */}
+        <div
+          className="hw-rack flex items-center gap-3 px-4 py-2.5 flex-1 min-w-[180px] max-w-md"
+          style={{ background: "#14110f" }}
+        >
+          <span className="text-[10px] font-extrabold tracking-[0.12em] whitespace-nowrap" style={{ color: "#e08b26" }}>
+            SEARCH //
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ARTIST OR SONG..."
+            className="bg-transparent border-none outline-none w-full text-sm font-bold uppercase"
+            style={{
+              fontFamily: "'Courier New', Courier, monospace",
+              color: "#e8dfce",
+              fontSize: 13,
+            }}
+          />
         </div>
-      </div>
 
-      {/* Filters */}
-      <div className="mb-3 animate-fade-up" style={{ animationDelay: "80ms" }}>
-        <div className="label mb-2">Section</div>
-        <div className="flex flex-wrap gap-1.5">
-          {SECTION_TYPES.map((s) => (
-            <Toggle
-              key={s}
-              variant="outline"
-              size="sm"
-              pressed={sectionFilter === s}
-              onPressedChange={() => setSectionFilter(s)}
-              className="data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:ring-primary/20 rounded-full px-3 h-7"
+        {/* Filter buttons */}
+        <div
+          className="flex flex-wrap gap-1 p-1.5"
+          style={{ background: "#0f0d0b", border: "1px solid #221d19", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.8)" }}
+        >
+          {FILTER_SECTIONS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setActiveFilter(f)}
+              className={`hw-mode-btn ${activeFilter === f ? "active" : ""}`}
+              style={{ padding: "5px 12px", width: "auto" }}
             >
-              {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
-            </Toggle>
+              {f}
+            </button>
           ))}
         </div>
       </div>
 
-      <div className="mb-8 animate-fade-up" style={{ animationDelay: "120ms" }}>
-        <div className="label mb-2">Gain</div>
-        <div className="flex flex-wrap gap-1.5">
-          {GAIN_LEVELS.map((g) => (
-            <Toggle
-              key={g.value}
-              variant="outline"
-              size="sm"
-              pressed={gainFilter === g.value}
-              onPressedChange={() => setGainFilter(g.value)}
-              className="data-[state=on]:bg-primary/10 data-[state=on]:text-primary data-[state=on]:ring-primary/20 rounded-full px-3 h-7"
-            >
-              {g.label}
-            </Toggle>
-          ))}
-        </div>
-      </div>
+      {/* Main browser: sidebar + catalog */}
+      <div className="flex flex-col lg:flex-row gap-4 sm:gap-6" style={{ minHeight: 480 }}>
 
-      {/* Results */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {Array.from({ length: 9 }).map((_, i) => <SkeletonCard key={i} />)}
-        </div>
-      ) : profiles.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Search className="mx-auto mb-3 size-10 opacity-40" />
-          <p className="text-sm">No tones found. Try adjusting your filters.</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 stagger">
-            {profiles.map((p) => (
-              <div key={p.id} className="animate-fade-up">
-                <ToneCard profile={p} />
+        {/* Sidebar — Artists */}
+        <div className="flex flex-col gap-3 w-full lg:w-[260px] lg:flex-shrink-0">
+          <div className="hw-label">BROWSE ARTISTS</div>
+          <div
+            className="hw-rack flex flex-col gap-1.5 p-3 overflow-y-auto"
+            style={{ maxHeight: 260, flex: "1 1 auto" }}
+          >
+            <div className="hw-panel-label mb-2">FEATURED ARTISTS</div>
+            {loadingArtists ? (
+              <div className="text-[11px] font-bold py-4 text-center" style={{ color: "#968a7c" }}>
+                LOADING...
               </div>
-            ))}
+            ) : (
+              artists.map((artist) => (
+                <button
+                  key={artist.id}
+                  onClick={() => setSelectedArtist(artist)}
+                  className="flex items-center gap-3 p-2.5 w-full text-left transition-all"
+                  style={
+                    selectedArtist?.id === artist.id
+                      ? { background: "#e08b26", color: "#111", border: "1px solid #000" }
+                      : { background: "#241e1a", color: "#e8dfce", border: "1px solid #111" }
+                  }
+                >
+                  <div
+                    className="w-9 h-9 flex items-center justify-center text-sm font-black flex-shrink-0"
+                    style={{
+                      background: selectedArtist?.id === artist.id ? "rgba(0,0,0,0.2)" : "#111",
+                      border: "1px solid #444",
+                    }}
+                  >
+                    {initials(artist.name)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-extrabold uppercase truncate">{artist.name}</div>
+                    <div className="text-[9px] opacity-70 uppercase mt-0.5">{artist.count} RECIPES</div>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Right — Songs/Tones */}
+        <div className="flex flex-col gap-3 flex-1 min-w-0">
+          <div className="hw-label">AVAILABLE RECIPES</div>
+          <div className="hw-screen flex flex-col flex-1" style={{ minHeight: 360 }}>
+
+            {/* Screen header */}
+            <div
+              className="flex justify-between items-center pb-3 mb-3"
+              style={{ borderBottom: "2px solid rgba(0,0,0,0.3)" }}
+            >
+              <h2 className="text-base sm:text-lg font-black uppercase leading-none" style={{ color: "#111" }}>
+                {selectedArtist?.name ?? "SELECT ARTIST"} // CATALOG
+              </h2>
+              <div
+                className="text-[10px] font-bold px-2 py-1 flex-shrink-0"
+                style={{ background: "rgba(0,0,0,0.1)", border: "1px solid rgba(0,0,0,0.2)", color: "#1a1a1a", fontFamily: "monospace" }}
+              >
+                {filteredTones.length} FOUND
+              </div>
+            </div>
+
+            {/* Tone list */}
+            <div className="flex-1 overflow-y-auto">
+              {loadingTones ? (
+                <div className="text-[11px] font-bold py-8 text-center" style={{ color: "#4a3e30" }}>
+                  LOADING...
+                </div>
+              ) : filteredTones.length === 0 ? (
+                <div className="text-[13px] font-bold py-8 text-center" style={{ color: "#4a3e30" }}>
+                  NO RECIPES FOUND
+                </div>
+              ) : (
+                filteredTones.map((tone) => (
+                  <div
+                    key={tone.id}
+                    className="flex items-center py-3 px-3 sm:px-4 gap-3 cursor-pointer transition-all"
+                    style={{
+                      borderBottom: "1px solid rgba(0,0,0,0.1)",
+                      color: "#1a1a1a",
+                    }}
+                    onClick={() => router.push(`/tone/${tone.id}`)}
+                  >
+                    {/* Song title + tone name */}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-bold truncate">{tone.songs.title}</div>
+                      {tone.name !== tone.songs.title && (
+                        <div className="text-[10px] opacity-60 uppercase mt-0.5">{tone.name}</div>
+                      )}
+                    </div>
+
+                    {/* Type tags */}
+                    <div
+                      className="hidden sm:block text-[10px] flex-shrink-0"
+                      style={{ fontFamily: "'Courier New', monospace", color: "#555" }}
+                    >
+                      {SECTION_SHORT[tone.section_type] || tone.section_type?.toUpperCase() || "—"}/
+                      {GAIN_SHORT[String(tone.gain_level)] || "MID"}
+                    </div>
+
+                    {/* Status */}
+                    <div className="hidden sm:block text-[10px] font-bold uppercase flex-shrink-0" style={{ color: "#555" }}>
+                      {tone.research_status === "verified" ? "✓ VERIFIED" :
+                       tone.research_status === "researched" ? "RESEARCHED" : "PARTIAL"}
+                    </div>
+
+                    {/* Load button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); router.push(`/tone/${tone.id}`); }}
+                      className="text-[10px] font-extrabold uppercase px-3 py-1.5 flex-shrink-0"
+                      style={{ background: "#111", color: "#e08b26", border: "none" }}
+                    >
+                      LOAD
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-3 mt-10">
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>
-                Previous
-              </Button>
-              <span className="text-sm font-medium text-muted-foreground tabular-nums">
-                {page + 1} / {totalPages}
-              </span>
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}>
-                Next
-              </Button>
+          {/* Bottom nav */}
+          <div className="flex flex-wrap justify-between items-center gap-3">
+            <div
+              className="flex flex-wrap gap-1.5 p-1.5"
+              style={{ background: "#0f0d0b", border: "1px solid #221d19", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.8)" }}
+            >
+              {["ARTISTS", "GENRES", "MY RIGS", "HISTORY"].map((lbl, i) => (
+                <button
+                  key={lbl}
+                  className={`hw-mode-btn ${i === 0 ? "active" : ""}`}
+                  style={{ padding: "7px 14px", width: "auto" }}
+                  onClick={() => { if (lbl === "MY RIGS") router.push("/rigs"); }}
+                >
+                  {lbl}
+                </button>
+              ))}
             </div>
-          )}
-        </>
-      )}
-    </div>
+            <div className="text-[10px] font-bold tracking-[0.1em]" style={{ color: "#968a7c", fontFamily: "monospace" }}>
+              {artists.reduce((acc, a) => acc + a.count, 0)} RECIPES LOADED
+            </div>
+          </div>
+        </div>
+      </div>
+    </HardwareChassis>
   );
 }
