@@ -64,16 +64,12 @@ export default function RigsPage() {
           style={{ color: "#e8dfce", textShadow: "2px 2px 0 rgba(0,0,0,0.9)" }}>
           RIG MANAGER
         </div>
-        <div className="flex flex-wrap gap-2">
-          {["EDITOR", "LIBRARIAN", "SETTINGS"].map((lbl, i) => (
-            <button key={lbl}
-              className={`hw-mode-btn ${i === 1 ? "active" : ""}`}
-              style={{ padding: "8px 16px", width: "auto" }}
-              onClick={() => { if (lbl === "EDITOR") router.push("/"); }}>
-              {lbl}
-            </button>
-          ))}
-        </div>
+        <button
+          className="hw-mode-btn"
+          style={{ padding: "8px 20px", width: "auto" }}
+          onClick={() => router.push("/")}>
+          ← CATALOG
+        </button>
       </div>
 
       {/* Slot grid — 1 col mobile, 2 col sm, 4 col lg */}

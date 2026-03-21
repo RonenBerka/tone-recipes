@@ -128,7 +128,13 @@ export default function HomePage() {
     name.split(" ").map((w) => w[0]).join("").slice(0, 3).toUpperCase();
 
   return (
-    <HardwareChassis fullWidth displayLabel="SYSTEM //" title="CATALOG BROWSER">
+    <HardwareChassis
+      fullWidth
+      displayLabel="ARTIST //"
+      title={selectedArtist?.name ?? "—"}
+      displayLabel2={selectedArtist ? "RECIPES //" : undefined}
+      subtitle={selectedArtist ? String(selectedArtist.count) : undefined}
+    >
 
       {/* Search + Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
@@ -297,26 +303,18 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Bottom nav */}
-          <div className="flex flex-wrap justify-between items-center gap-3">
-            <div
-              className="flex flex-wrap gap-1.5 p-1.5"
-              style={{ background: "#0f0d0b", border: "1px solid #221d19", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.8)" }}
-            >
-              {["ARTISTS", "GENRES", "MY RIGS", "HISTORY"].map((lbl, i) => (
-                <button
-                  key={lbl}
-                  className={`hw-mode-btn ${i === 0 ? "active" : ""}`}
-                  style={{ padding: "7px 14px", width: "auto" }}
-                  onClick={() => { if (lbl === "MY RIGS") router.push("/rigs"); }}
-                >
-                  {lbl}
-                </button>
-              ))}
-            </div>
+          {/* Bottom bar */}
+          <div className="flex justify-between items-center gap-3">
             <div className="text-[10px] font-bold tracking-[0.1em]" style={{ color: "#968a7c", fontFamily: "monospace" }}>
-              {artists.reduce((acc, a) => acc + a.count, 0)} RECIPES LOADED
+              {artists.reduce((acc, a) => acc + a.count, 0)} RECIPES IN CATALOG
             </div>
+            <button
+              className="hw-mode-btn"
+              style={{ padding: "7px 20px", width: "auto" }}
+              onClick={() => router.push("/rigs")}
+            >
+              MY RIGS →
+            </button>
           </div>
         </div>
       </div>
