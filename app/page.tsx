@@ -80,16 +80,34 @@ export default function HomePage() {
   useEffect(() => {
     if (!selectedArtist) return;
     setLoadingTones(true);
+    setTones([]); // clear old results immediately
 
-    supabase
-      .from("tone_profiles")
-      .select("id, name, section_type, gain_level, confidence_score, research_status, songs!inner(id, title, artists!inner(id, name))")
-      .eq("songs.artists.id", selectedArtist.id)
-      .order("confidence_score", { ascending: false })
-      .then(({ data }) => {
-        if (data) setTones(data as unknown as ToneRow[]);
+    async function loadTones() {
+      // Step 1: get song IDs for this artist directly via artist_id FK
+      const { data: songData } = await supabase
+        .from("songs")
+        .select("id")
+        .eq("artist_id", selectedArtist!.id);
+
+      const songIds = (songData || []).map((s: any) => s.id);
+      if (songIds.length === 0) {
+        setTones([]);
         setLoadingTones(false);
-      });
+        return;
+      }
+
+      // Step 2: get tone profiles for those songs via song_id FK
+      const { data } = await supabase
+        .from("tone_profiles")
+        .select("id, name, section_type, gain_level, confidence_score, research_status, songs!inner(id, title)")
+        .in("song_id", songIds)
+        .order("confidence_score", { ascending: false });
+
+      if (data) setTones(data as unknown as ToneRow[]);
+      setLoadingTones(false);
+    }
+
+    loadTones();
   }, [selectedArtist]);
 
   const filteredTones = useMemo(() => {
