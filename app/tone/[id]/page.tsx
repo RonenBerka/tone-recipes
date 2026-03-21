@@ -10,6 +10,9 @@ import { ToneProfile, ToneProfileBlock } from "@/lib/types";
 import { resolveGearSvg } from "@/lib/gearSvgMap";
 import { HardwareChassis } from "@/components/HardwareChassis";
 import { GEAR_ENCYCLOPEDIA } from "@/lib/gearEncyclopedia";
+import { getRigSlots, saveToSlot } from "@/lib/rigStorage";
+import { downloadHelixPatch, HelixBlock } from "@/lib/helixExport";
+import { lookupPlatformEntry, PLATFORM_LABELS, PLATFORM_COLORS } from "@/lib/platformMappings";
 
 /* ───────── Role display maps ───────── */
 const ROLE_SHORT: Record<string, string> = {
@@ -144,7 +147,7 @@ interface SourceRow {
 }
 
 type CertaintyTier = "certain" | "partial" | "estimate";
-type ViewMode = "MANUAL SET" | "PRESET FILE" | "ALT GEAR";
+type ViewMode = "MANUAL SET" | "PRESET FILE" | "ALT GEAR" | "PLATFORMS";
 
 function getCertaintyTier(status: string | null, conf: number): CertaintyTier {
   if (status === "verified" || (status === "researched" && conf >= 80)) return "certain";
@@ -183,6 +186,27 @@ function Knob({ label, rotation = 0 }: { label: string; rotation?: number }) {
   );
 }
 
+const AMPERO_DEVICE_ID = "9ee505b7-e138-4650-b342-6b85bc6015af";
+
+interface AmperoMapping {
+  canonical_model_id: string;
+  mapping_type: "exactish" | "close" | "approximation" | "fallback";
+  similarity_score: number;
+  notes: string | null;
+  model_name: string;
+  based_on_text: string | null;
+  binary_category: number | null;
+  binary_subcategory: number | null;
+  binary_model_id: number | null;
+}
+
+const MAPPING_TYPE_CONFIG = {
+  exactish:      { label: "EXACT",    color: "#22875a", bg: "#22875a22" },
+  close:         { label: "CLOSE",    color: "#c8a020", bg: "#c8a02022" },
+  approximation: { label: "APPROX",   color: "#b84729", bg: "#b8472922" },
+  fallback:      { label: "FALLBACK", color: "#968a7c", bg: "#968a7c22" },
+} as const;
+
 /* ───────── Main page ───────── */
 export default function ToneRecipePage() {
   const params = useParams();
@@ -196,6 +220,14 @@ export default function ToneRecipePage() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [viewMode, setViewMode]       = useState<ViewMode>("MANUAL SET");
   const [relatedSongs, setRelatedSongs] = useState<{ id: string; title: string }[]>([]);
+  // Ampero mappings: canonical_model_id → best mapping (first = highest similarity)
+  const [amperoMappings, setAmperoMappings] = useState<Record<string, AmperoMapping[]>>({});
+  const [copied, setCopied]           = useState(false);
+
+  // Rig slot picker
+  const [showSlotPicker, setShowSlotPicker] = useState(false);
+  const [rigSlots, setRigSlots]       = useState<ReturnType<typeof getRigSlots>>(Array(8).fill(null));
+  const [savedToSlot, setSavedToSlot] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -224,7 +256,43 @@ export default function ToneRecipePage() {
             .then(({ data }) => { if (data) setSources(data as SourceRow[]); });
         }
       }
-      if (blocksRes.data) setBlocks(blocksRes.data as unknown as ToneProfileBlock[]);
+      if (blocksRes.data) {
+        const loadedBlocks = blocksRes.data as unknown as ToneProfileBlock[];
+        setBlocks(loadedBlocks);
+
+        // Fetch Ampero mappings for all canonical models in this tone
+        const canonicalIds = [...new Set(loadedBlocks.map(b => b.canonical_models.id))];
+        if (canonicalIds.length > 0) {
+          supabase
+            .from("device_model_mappings")
+            .select(`canonical_model_id, mapping_type, similarity_score, notes,
+                     device_models!inner(model_name, based_on_text, binary_category, binary_subcategory, binary_model_id, device_id)`)
+            .in("canonical_model_id", canonicalIds)
+            .order("similarity_score", { ascending: false })
+            .then(({ data }) => {
+              if (!data) return;
+              const map: Record<string, AmperoMapping[]> = {};
+              for (const row of data as any[]) {
+                // Filter to Ampero device only
+                if (row.device_models?.device_id !== AMPERO_DEVICE_ID) continue;
+                const cm = row.canonical_model_id;
+                if (!map[cm]) map[cm] = [];
+                map[cm].push({
+                  canonical_model_id: cm,
+                  mapping_type: row.mapping_type,
+                  similarity_score: Number(row.similarity_score),
+                  notes: row.notes,
+                  model_name: row.device_models.model_name,
+                  based_on_text: row.device_models.based_on_text,
+                  binary_category: row.device_models.binary_category,
+                  binary_subcategory: row.device_models.binary_subcategory,
+                  binary_model_id: row.device_models.binary_model_id,
+                });
+              }
+              setAmperoMappings(map);
+            });
+        }
+      }
       setLoading(false);
     }
     load();
@@ -300,14 +368,139 @@ export default function ToneRecipePage() {
 
   const artistName = (profile as any).songs?.artists?.name || "";
 
+  function handleOpenSlotPicker() {
+    setRigSlots(getRigSlots());
+    setShowSlotPicker(true);
+    setSavedToSlot(null);
+  }
+
+  function handleSaveToSlot(slotIdx: number) {
+    saveToSlot(slotIdx, profile!.id);
+    setSavedToSlot(slotIdx);
+    setRigSlots(getRigSlots());
+    setTimeout(() => setShowSlotPicker(false), 900);
+  }
+
   return (
     <HardwareChassis fullWidth title={profile.songs.artists.name} subtitle={profile.songs.title}>
 
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "#968a7c" }}>
-        <Link href="/" className="hover:opacity-70" style={{ color: "#968a7c" }}>CATALOG</Link>
-        <span>//</span>
-        <span style={{ color: "#e08b26" }}>{profile.songs.artists.name} — {profile.songs.title}</span>
+      {/* Slot picker overlay */}
+      {showSlotPicker && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.75)" }}
+          onClick={() => setShowSlotPicker(false)}
+        >
+          <div
+            className="flex flex-col gap-0 overflow-hidden"
+            style={{
+              background: "#14110f",
+              border: "1px solid #e08b26",
+              boxShadow: "0 0 40px rgba(224,139,38,0.3)",
+              minWidth: 320,
+              maxWidth: 480,
+              width: "90vw",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              className="flex justify-between items-center px-4 py-3"
+              style={{ background: "#1a1613", borderBottom: "1px solid #221d19" }}
+            >
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-wider" style={{ color: "#e08b26" }}>
+                  SAVE TO RIG SLOT
+                </div>
+                <div className="text-[9px] font-bold uppercase mt-0.5" style={{ color: "#968a7c" }}>
+                  {profile.songs.artists.name} — {profile.songs.title}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSlotPicker(false)}
+                className="text-[11px] font-black"
+                style={{ color: "#968a7c" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Slot grid (2 cols) */}
+            <div className="grid grid-cols-2 gap-px p-px" style={{ background: "#221d19" }}>
+              {rigSlots.map((slot, i) => {
+                const isSaved = savedToSlot === i;
+                const isOccupied = slot !== null && slot.tone_profile_id !== profile!.id;
+                const isSelf = slot?.tone_profile_id === profile!.id;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => handleSaveToSlot(i)}
+                    className="flex items-center gap-3 p-3 text-left transition-all"
+                    style={{
+                      background: isSaved
+                        ? "#22875a"
+                        : isSelf
+                        ? "#2a2018"
+                        : "#14110f",
+                      borderBottom: "none",
+                    }}
+                  >
+                    <div
+                      className="text-[10px] font-black flex-shrink-0 w-8 text-center py-1"
+                      style={{
+                        background: isSaved ? "#27ae60" : "#1a1613",
+                        color: isSaved ? "#fff" : "#e08b26",
+                        border: "1px solid #221d19",
+                      }}
+                    >
+                      {isSaved ? "✓" : String(i + 1).padStart(2, "0")}
+                    </div>
+                    <div className="min-w-0">
+                      {isSaved ? (
+                        <div className="text-[10px] font-black uppercase" style={{ color: "#fff" }}>
+                          SAVED!
+                        </div>
+                      ) : isSelf ? (
+                        <div className="text-[10px] font-bold uppercase" style={{ color: "#e08b26" }}>
+                          ALREADY HERE
+                        </div>
+                      ) : slot ? (
+                        <>
+                          <div className="text-[9px] font-black uppercase truncate" style={{ color: "#968a7c" }}>
+                            {(slot as any).songs?.artists?.name ?? "OCCUPIED"}
+                          </div>
+                          <div className="text-[10px] font-bold truncate" style={{ color: "#c4b5ac" }}>
+                            OVERWRITE
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-[10px] font-bold uppercase" style={{ color: "#4a4038" }}>
+                          EMPTY — SAVE HERE
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Breadcrumb + Save button */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "#968a7c" }}>
+          <Link href="/" className="hover:opacity-70" style={{ color: "#968a7c" }}>CATALOG</Link>
+          <span>//</span>
+          <span style={{ color: "#e08b26" }}>{profile.songs.artists.name} — {profile.songs.title}</span>
+        </div>
+        <button
+          onClick={handleOpenSlotPicker}
+          className="text-[10px] font-extrabold uppercase px-3 py-1.5 flex-shrink-0 transition-colors"
+          style={{ background: "#1a1613", color: "#e08b26", border: "1px solid #e08b2666" }}
+        >
+          SAVE TO RIG →
+        </button>
       </div>
 
       {/* ── Signal Chain Monitor ── */}
@@ -415,7 +608,9 @@ export default function ToneRecipePage() {
         <div className="flex flex-col gap-2 flex-1 min-w-0">
           <div className="hw-label">
             {viewMode === "MANUAL SET" ? "COMPONENT INSPECTOR" :
-             viewMode === "PRESET FILE" ? "GENERATE PRESET" : "ALT GEAR MATRIX"}
+             viewMode === "PRESET FILE" ? "GENERATE PRESET" :
+             viewMode === "PLATFORMS" ? "PLATFORM EQUIVALENTS" :
+             "ALT GEAR MATRIX"}
           </div>
 
           <div className="hw-screen flex-1 flex flex-col" style={{ minHeight: 280, padding: 0 }}>
@@ -579,30 +774,26 @@ export default function ToneRecipePage() {
                     </div>
                   )}
 
-                  {/* Related songs — same artist, same block role */}
+                  {/* Related songs — same artist, same block role (only shown when results exist) */}
+                  {relatedSongs.length > 0 && (
                   <div className="px-4 py-3" style={{ borderBottom: "1px solid rgba(0,0,0,0.12)" }}>
                     <div className="text-[9px] font-black uppercase tracking-[0.12em] mb-1.5" style={{ color: "#555" }}>
                       ALSO USED IN — {artistName.toUpperCase()}
                     </div>
-                    {relatedSongs.length === 0 ? (
-                      <p className="text-[11px] font-semibold italic" style={{ color: "#777" }}>
-                        Only this song in the catalog uses this block role.
-                      </p>
-                    ) : (
-                      <div className="flex flex-col gap-1">
-                        {relatedSongs.map(song => (
-                          <Link
-                            key={song.id}
-                            href={`/tone/${song.id}`}
-                            className="text-[12px] font-bold hover:underline"
-                            style={{ color: "#e08b26" }}
-                          >
-                            {song.title}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {relatedSongs.map(song => (
+                        <Link
+                          key={song.id}
+                          href={`/tone/${song.id}`}
+                          className="text-[12px] font-bold hover:underline"
+                          style={{ color: "#e08b26" }}
+                        >
+                          {song.title}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
+                  )}
 
                   {/* Sources */}
                   {sources.length > 0 && (
@@ -665,70 +856,382 @@ export default function ToneRecipePage() {
             )}
 
             {/* ── PRESET FILE view ── */}
-            {viewMode === "PRESET FILE" && (
-              <div className="flex flex-col items-center justify-center gap-5 flex-1 p-6">
-                <div className="text-center">
-                  <div className="text-xl font-black uppercase mb-1.5" style={{ color: "#111" }}>
-                    GENERATE PRESET FILE
-                  </div>
-                  <div className="text-sm font-semibold" style={{ color: "#333" }}>
-                    {profile.songs.artists.name} — {profile.songs.title}
-                  </div>
-                </div>
-                <Link href={`/generate/${id}`}>
-                  <button className="text-sm font-black uppercase tracking-[0.1em] px-8 py-4"
-                    style={{ background: "#b84729", color: "#fff", border: "2px solid #111", boxShadow: "0 4px 0 #000, inset 0 2px 0 rgba(255,255,255,0.2)" }}>
-                    SELECT GEAR &amp; GENERATE .PRST
-                  </button>
-                </Link>
-                <div className="text-[10px] font-bold tracking-[0.1em] uppercase" style={{ color: "#4a3e30" }}>
-                  COMPATIBLE: HOTONE AMPERO II STOMP
-                </div>
-              </div>
-            )}
+            {viewMode === "PRESET FILE" && (() => {
+              const presetLines = [
+                `TONE RECIPE — ${profile.songs.artists.name.toUpperCase()} / ${profile.songs.title.toUpperCase()}`,
+                `Confidence: ${Math.round(profile.confidence_score * 100)}%  |  ${profile.research_status?.toUpperCase() ?? ""}`,
+                `Generated: ${new Date().toLocaleDateString()}`,
+                ``,
+                `SIGNAL CHAIN (Hotone Ampero II Stomp)`,
+                `${"─".repeat(52)}`,
+                ...blocks.map((b, i) => {
+                  const mapping = amperoMappings[b.canonical_models.id]?.[0];
+                  const realName = b.canonical_models.reference_real_gear_name || b.canonical_models.canonical_name;
+                  const amperoName = mapping ? mapping.model_name : "— (no mapping)";
+                  const quality = mapping ? MAPPING_TYPE_CONFIG[mapping.mapping_type].label : "";
+                  return `${String(i + 1).padStart(2, "0")}  [${ROLE_SHORT[b.block_role]?.padEnd(4)}]  ${realName.padEnd(28)}→  ${amperoName}  ${quality}`;
+                }),
+                ``,
+                `NAVIGATION (Ampero UI)`,
+                `${"─".repeat(52)}`,
+                ...blocks.map((b, i) => {
+                  const mapping = amperoMappings[b.canonical_models.id]?.[0];
+                  if (!mapping?.binary_category) return `${String(i + 1).padStart(2, "0")}  [${ROLE_SHORT[b.block_role]}]  — navigate manually`;
+                  return `${String(i + 1).padStart(2, "0")}  [${ROLE_SHORT[b.block_role]?.padEnd(4)}]  Cat:${mapping.binary_category}  Sub:${mapping.binary_subcategory}  Model:${mapping.binary_model_id}  →  ${mapping.based_on_text ?? mapping.model_name}`;
+                }),
+              ].join("\n");
 
-            {/* ── ALT GEAR view ── */}
+              return (
+                <div className="flex flex-col h-full overflow-hidden">
+                  {/* Header bar */}
+                  <div className="flex items-center justify-between px-4 py-2.5 flex-shrink-0"
+                    style={{ borderBottom: "2px solid rgba(0,0,0,0.2)" }}>
+                    <div>
+                      <div className="text-[11px] font-black uppercase" style={{ color: "#111" }}>
+                        SETUP SHEET — HOTONE AMPERO II STOMP
+                      </div>
+                      <div className="text-[9px] font-bold uppercase mt-0.5" style={{ color: "#444" }}>
+                        {profile.songs.artists.name} — {profile.songs.title}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => {
+                          const helixBlocks: HelixBlock[] = blocks.map((b) => ({
+                            block_role: b.block_role,
+                            canonical_name: b.canonical_models.canonical_name,
+                            ref_name: b.canonical_models.reference_real_gear_name || b.canonical_models.canonical_name,
+                            gain_level: profile.gain_level ?? undefined,
+                          }));
+                          downloadHelixPatch(
+                            (profile as any).songs?.artists?.name ?? "",
+                            (profile as any).songs?.title ?? "",
+                            helixBlocks
+                          );
+                        }}
+                        className="text-[9px] font-black uppercase px-3 py-1.5 transition-colors"
+                        style={{ background: "#1a6fbf", color: "#fff", border: "none" }}
+                        title="Download as Line 6 Helix patch (.hlx)"
+                      >
+                        ↓ HELIX .HLX
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(presetLines);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="text-[9px] font-black uppercase px-3 py-1.5 transition-colors"
+                        style={{
+                          background: copied ? "#22875a" : "#111",
+                          color: copied ? "#fff" : "#e08b26",
+                          border: "none",
+                        }}
+                      >
+                        {copied ? "COPIED ✓" : "COPY TEXT"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Block list */}
+                  <div className="overflow-y-auto flex-1">
+                    {blocks.map((b, i) => {
+                      const blockColor = BLOCK_COLORS[b.block_role] || "#7a6e62";
+                      const cmId = b.canonical_models.id;
+                      const mappings = amperoMappings[cmId] ?? [];
+                      const best = mappings[0];
+                      const mtc = best ? MAPPING_TYPE_CONFIG[best.mapping_type] : null;
+                      const realName = b.canonical_models.reference_real_gear_name || b.canonical_models.canonical_name;
+
+                      return (
+                        <div key={b.id}
+                          className="px-4 py-3 cursor-pointer transition-colors"
+                          style={{
+                            borderBottom: "1px solid rgba(0,0,0,0.1)",
+                            background: i === selectedIndex ? "rgba(224,139,38,0.08)" : "transparent",
+                          }}
+                          onClick={() => setSelectedIndex(i)}
+                        >
+                          {/* Row header */}
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-[9px] font-black w-5 flex-shrink-0 text-center"
+                              style={{ color: "#888" }}>
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <span className="text-[9px] font-black px-1.5 py-0.5 flex-shrink-0"
+                              style={{ background: blockColor + "33", border: `1px solid ${blockColor}66`, color: blockColor }}>
+                              {ROLE_SHORT[b.block_role]}
+                            </span>
+                            <span className="text-[11px] font-bold truncate" style={{ color: "#1a1a1a" }}>
+                              {realName}
+                            </span>
+                          </div>
+
+                          {/* Ampero model */}
+                          {best ? (
+                            <div className="flex items-start gap-2 pl-7">
+                              <span className="text-[9px] font-black px-1.5 py-0.5 flex-shrink-0 mt-px"
+                                style={{ background: mtc!.bg, border: `1px solid ${mtc!.color}66`, color: mtc!.color }}>
+                                {mtc!.label}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="text-[12px] font-black" style={{ color: "#111", fontFamily: "'Courier New', monospace" }}>
+                                  {best.model_name}
+                                </div>
+                                {best.based_on_text && (
+                                  <div className="text-[9px] mt-0.5" style={{ color: "#555" }}>
+                                    {best.based_on_text}
+                                  </div>
+                                )}
+                                {best.binary_category != null && (
+                                  <div className="flex gap-2 mt-1">
+                                    {[
+                                      { l: "CAT", v: best.binary_category },
+                                      { l: "SUB", v: best.binary_subcategory },
+                                      { l: "MDL", v: best.binary_model_id },
+                                    ].map(({ l, v }) => (
+                                      <span key={l} className="text-[8px] font-black px-1 py-0.5"
+                                        style={{ background: "rgba(0,0,0,0.08)", color: "#555", fontFamily: "monospace" }}>
+                                        {l}:{v}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                {/* Alt mappings */}
+                                {mappings.length > 1 && (
+                                  <div className="mt-1.5 flex flex-wrap gap-1">
+                                    {mappings.slice(1, 3).map((alt, ai) => {
+                                      const ac = MAPPING_TYPE_CONFIG[alt.mapping_type];
+                                      return (
+                                        <span key={ai} className="text-[8px] font-bold px-1.5 py-0.5"
+                                          style={{ background: ac.bg, border: `1px solid ${ac.color}44`, color: ac.color }}>
+                                          ALT: {alt.model_name}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="pl-7 text-[10px] font-bold" style={{ color: "#888" }}>
+                              No Ampero mapping — navigate manually
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ── ALT GEAR view — Ampero mapping matrix ── */}
             {viewMode === "ALT GEAR" && (
               <div className="flex flex-col overflow-hidden">
-                <div className="grid py-2.5 px-4 text-[9px] font-black uppercase"
-                  style={{ gridTemplateColumns: "72px 1fr 90px", borderBottom: "2px solid rgba(0,0,0,0.2)", color: "#000" }}>
-                  <div>BLOCK</div>
-                  <div>REFERENCE GEAR</div>
-                  <div>CONFIDENCE</div>
+                {/* Column headers */}
+                <div className="grid py-2.5 px-4 text-[9px] font-black uppercase flex-shrink-0"
+                  style={{ gridTemplateColumns: "60px 1fr 140px 64px", borderBottom: "2px solid rgba(0,0,0,0.2)", color: "#555" }}>
+                  <div>ROLE</div>
+                  <div>REAL GEAR</div>
+                  <div>AMPERO MODEL</div>
+                  <div>MATCH</div>
                 </div>
                 <div className="overflow-y-auto flex-1">
                   {blocks.map((b, i) => {
                     const blockColor = BLOCK_COLORS[b.block_role] || "#7a6e62";
+                    const cmId = b.canonical_models.id;
+                    const best = amperoMappings[cmId]?.[0];
+                    const mtc = best ? MAPPING_TYPE_CONFIG[best.mapping_type] : null;
+                    const realName = b.canonical_models.reference_real_gear_name || b.canonical_models.canonical_name;
+
                     return (
                       <div key={b.id}
                         className="grid items-center py-2.5 px-4 cursor-pointer transition-colors"
                         style={{
-                          gridTemplateColumns: "72px 1fr 90px",
-                          borderBottom: "1px solid rgba(0,0,0,0.1)",
-                          background: i === selectedIndex ? "rgba(224,139,38,0.12)" : "transparent",
+                          gridTemplateColumns: "60px 1fr 140px 64px",
+                          borderBottom: "1px solid rgba(0,0,0,0.08)",
+                          background: i === selectedIndex ? "rgba(224,139,38,0.08)" : "transparent",
                         }}
                         onClick={() => setSelectedIndex(i)}
                       >
+                        {/* Role */}
                         <div className="text-[10px] font-black uppercase" style={{ color: blockColor }}>
                           {ROLE_SHORT[b.block_role]}
                         </div>
-                        <div className="text-[11px] font-bold truncate pr-2" style={{ color: "#1a1a1a", fontFamily: "'Courier New', monospace" }}>
-                          {b.canonical_models.reference_real_gear_name || b.canonical_models.canonical_name}
+
+                        {/* Real gear name */}
+                        <div className="text-[10px] font-bold pr-2 truncate" style={{ color: "#1a1a1a" }}>
+                          {realName}
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <div style={{ width: 48, height: 8, background: "rgba(0,0,0,0.15)", border: "1px solid rgba(0,0,0,0.2)", position: "relative" }}>
-                            <div style={{ position: "absolute", inset: 0, right: "auto", width: `${Math.round(profile.confidence_score * 100)}%`, background: "#e08b26" }} />
-                          </div>
-                          <span className="text-[9px] font-bold" style={{ color: "#333" }}>
-                            {Math.round(profile.confidence_score * 100)}%
-                          </span>
+
+                        {/* Ampero model name */}
+                        <div className="pr-2">
+                          {best ? (
+                            <div>
+                              <div className="text-[11px] font-black truncate"
+                                style={{ color: "#111", fontFamily: "'Courier New', monospace" }}>
+                                {best.model_name}
+                              </div>
+                              {best.based_on_text && (
+                                <div className="text-[8px] truncate mt-0.5" style={{ color: "#666" }}>
+                                  {best.based_on_text}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[9px]" style={{ color: "#888" }}>—</span>
+                          )}
                         </div>
+
+                        {/* Match quality badge */}
+                        <div>
+                          {mtc ? (
+                            <span className="text-[8px] font-black px-1.5 py-0.5"
+                              style={{ background: mtc.bg, border: `1px solid ${mtc.color}66`, color: mtc.color }}>
+                              {mtc.label}
+                            </span>
+                          ) : (
+                            <span className="text-[8px]" style={{ color: "#888" }}>N/A</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Footer note */}
+                <div className="px-4 py-2 flex-shrink-0 flex items-center gap-3"
+                  style={{ borderTop: "1px solid rgba(0,0,0,0.1)", background: "rgba(0,0,0,0.04)" }}>
+                  {(["exactish","close","approximation","fallback"] as const).map(t => {
+                    const c = MAPPING_TYPE_CONFIG[t];
+                    return (
+                      <div key={t} className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full inline-block" style={{ background: c.color }} />
+                        <span className="text-[8px] font-bold" style={{ color: "#666" }}>{c.label}</span>
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
+
+            {/* ── PLATFORMS view ── */}
+            {viewMode === "PLATFORMS" && selectedBlock && (() => {
+              const gear = selectedBlock.canonical_models;
+              const entry = lookupPlatformEntry(
+                gear.reference_real_gear_name || "",
+                gear.canonical_name
+              );
+              const gearDisplayName = gear.reference_real_gear_name || gear.canonical_name;
+
+              const platformKeys = ["fractal", "helix", "boss", "neural", "kemper"] as const;
+              const platformLongLabels: Record<string, string> = {
+                fractal: "Fractal Audio  Axe-FX III / FM9",
+                helix:   "Line 6 Helix / HX Stomp",
+                boss:    "Boss GT-1000 / GT-1000CORE",
+                neural:  "Neural DSP Quad Cortex",
+                kemper:  "Kemper Profiler",
+              };
+
+              return (
+                <div className="flex flex-col h-full overflow-hidden">
+                  {/* Header */}
+                  <div className="px-4 py-3 flex-shrink-0" style={{ borderBottom: "2px solid rgba(0,0,0,0.2)" }}>
+                    <div className="text-[11px] font-black uppercase" style={{ color: "#111" }}>
+                      {gearDisplayName}
+                    </div>
+                    <div className="text-[9px] font-bold uppercase mt-0.5" style={{ color: "#444" }}>
+                      {ROLE_SHORT[selectedBlock.block_role]} · MULTI-EFFECTS EQUIVALENTS
+                    </div>
+                  </div>
+
+                  {/* Platform rows */}
+                  <div className="overflow-y-auto flex-1">
+                    {entry ? (
+                      <>
+                        {platformKeys.map((key) => {
+                          const value = entry[key];
+                          const color = PLATFORM_COLORS[key] ?? "#555";
+                          return (
+                            <div
+                              key={key}
+                              className="flex flex-col gap-1 px-4 py-3"
+                              style={{ borderBottom: "1px solid rgba(0,0,0,0.1)" }}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="text-[8px] font-black uppercase px-2 py-0.5 flex-shrink-0"
+                                  style={{
+                                    background: color,
+                                    color: "#fff",
+                                    minWidth: 72,
+                                    textAlign: "center",
+                                  }}
+                                >
+                                  {PLATFORM_LABELS[key]}
+                                </span>
+                                <span
+                                  className="text-[10px] font-bold"
+                                  style={{ fontFamily: "'Courier New', monospace", color: value === "—" ? "#888" : "#111" }}
+                                >
+                                  {value ?? "—"}
+                                </span>
+                              </div>
+                              <div className="text-[9px] pl-[80px]" style={{ color: "#777" }}>
+                                {platformLongLabels[key]}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Notes */}
+                        {entry.notes && (
+                          <div className="px-4 py-3" style={{ background: "rgba(0,0,0,0.05)", borderTop: "1px solid rgba(0,0,0,0.1)" }}>
+                            <div className="text-[9px] font-black uppercase mb-1" style={{ color: "#555" }}>
+                              NOTES
+                            </div>
+                            <div className="text-[11px]" style={{ color: "#333", lineHeight: 1.5 }}>
+                              {entry.notes}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Ampero mapping reminder */}
+                        <div className="px-4 py-3" style={{ background: "rgba(224,139,38,0.06)", borderTop: "1px solid rgba(224,139,38,0.15)" }}>
+                          <div className="text-[9px] font-black uppercase mb-1" style={{ color: "#e08b26" }}>
+                            HOTONE AMPERO II STOMP
+                          </div>
+                          <div className="text-[10px] font-bold" style={{ color: "#555" }}>
+                            See ALT GEAR tab for Ampero-specific model name and mapping quality.
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-3 p-8">
+                        <div className="text-[11px] font-black uppercase" style={{ color: "#555" }}>
+                          NO MAPPING DATA
+                        </div>
+                        <div className="text-[10px] text-center" style={{ color: "#777", lineHeight: 1.6, maxWidth: 240 }}>
+                          Platform equivalents for "{gearDisplayName}" are not yet in the database.
+                          This gear may be too rare or too recent to be modeled on major platforms.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* PLATFORMS view when no block selected */}
+            {viewMode === "PLATFORMS" && !selectedBlock && (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-[11px] font-bold uppercase" style={{ color: "#555" }}>
+                  SELECT A BLOCK IN THE SIGNAL CHAIN
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -740,7 +1243,7 @@ export default function ToneRecipePage() {
             <div className="hw-label">IMPLEMENT MODE</div>
             <div className="flex flex-row lg:flex-col gap-1 p-1.5"
               style={{ background: "#0f0d0b", border: "1px solid #221d19", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.8)" }}>
-              {(["PRESET FILE", "MANUAL SET", "ALT GEAR"] as ViewMode[]).map((mode) => (
+              {(["PRESET FILE", "MANUAL SET", "ALT GEAR", "PLATFORMS"] as ViewMode[]).map((mode) => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   className={`hw-mode-btn ${viewMode === mode ? "active" : ""}`}
                   style={{ padding: "7px 10px" }}>
